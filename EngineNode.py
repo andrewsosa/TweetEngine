@@ -20,6 +20,7 @@ class EngineNode(StreamListener):
         self.tweet_count = 0
         self.tweet_rate_recent = 0
         self.tweet_rate_total = 0
+        self.tweet_rate_queue = []
         self.last_velocity_update = datetime.datetime.now()
 
         # Lock and target location
@@ -48,7 +49,7 @@ class EngineNode(StreamListener):
     def on_data(self, data):
         try:
             json_data = json.loads(data)
-            #print json_data['created_at'] + " " + json_data['text']
+            print json_data['created_at'] + " " + json_data['text']
         except:
             print "Data " + str(data)
         self.tweet_count = self.tweet_count + 1
@@ -76,8 +77,14 @@ class EngineNode(StreamListener):
         diff = (self.last_velocity_update - temp).total_seconds()
         if diff != 0:
             self.tweet_rate_recent = t_count / diff
-        self.tweet_rate_total = (self.tweet_rate_recent + self.tweet_rate_total) / 2
 
+        # Handle approximate total velocity
+        self.tweet_rate_queue.append(self.tweet_rate_recent)
+        if len(self.tweet_rate_queue) > 1024:
+            self.tweet_rate_queue.pop(0)
+        self.tweet_rate_total = sum(self.tweet_rate_queue) / len(self.tweet_rate_queue)
+
+        # Print results
         print "RECENT RATE: " + str(self.tweet_rate_recent) + " per second."
         print "TOTAL RATE: " + str(self.tweet_rate_total) + " per second."
 
