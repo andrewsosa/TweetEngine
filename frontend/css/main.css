@@ -1,0 +1,29 @@
+@import url(https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300);
+
+* {
+  color: inherit;
+}
+
+html {
+  font-family: 'Source Sans Pro', sans-serif;
+  font-weight: 400;
+  height: 100%;
+}
+
+#toolbar {
+  background-color: red;
+}
+
+.mdc-bg-white {
+  background-color: #ffffff;
+}
+
+
+.main {
+  margin-top: 50px;
+}
+
+#map {
+  display: flex;
+  height: 100%
+}
