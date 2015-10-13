@@ -3,6 +3,9 @@ from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
 from tweepy import Stream
 
+# Unofficial REST Firebase API
+from firebase import Firebase
+
 # Other libs
 import json, threading, datetime
 
@@ -26,6 +29,11 @@ class EngineNode(StreamListener):
         # Lock and target location
         self.lock = threading.Lock()
         self.location = location
+
+        # Firebase
+        self.firebase = Firebase('https://tweetengine.firebaseio.com/')
+        self.name = str(self.location[0]) + "," + str(self.location[1])
+
 
     # Start node
     def start(self):
@@ -88,8 +96,13 @@ class EngineNode(StreamListener):
         print "RECENT RATE: " + str(self.tweet_rate_recent) + " per second."
         print "TOTAL RATE: " + str(self.tweet_rate_total) + " per second."
 
-        # Rerun again in 15 seconds
-        t = threading.Timer(15, self.updateVelocity)
+        # Push results to server
+        locations = self.firebase.child("locations")
+        locations.child(self.name).update({'velocity':self.tweet_rate_recent})
+
+
+        # Rerun again in 5 seconds
+        t = threading.Timer(5, self.updateVelocity)
         t.daemon = True
         t.start()
 
