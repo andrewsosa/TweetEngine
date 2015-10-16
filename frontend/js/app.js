@@ -1,7 +1,12 @@
 // Global vars
 var map;
-var cells;
-var mapBounds;
+var cells = {};
+var mapBounds  = {
+  north: 31,
+  south: 25,
+  east: -79,
+  west: -88
+};;
 
 // Florida boundaries
 /*mapBounds = {
@@ -20,7 +25,6 @@ var opacity = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5];
 var firebase = new Firebase("https://tweetengine.firebaseio.com/");
 var locations = firebase.child("locations");
 
-
 // Draw square on map for given params
 function makeSquare(bounds, map, color) {
   return new google.maps.Rectangle({
@@ -35,15 +39,8 @@ function makeSquare(bounds, map, color) {
   });
 }
 
-function getCellFromLngLat(lng, lat) {
-  var x = lng - mapBounds.west;
-  var y = lat - mapBounds.south;
-  return {cell:cells[x][y].cell, x:x, y:y};
-}
-
 // Modify cell shade for given lng, lat.
-function shadeCell(lng, lat, opacity) {
-  var rect = cells[lng][lat].cell;
+function shadeCell(rect, opacity) {
   rect.setOptions({fillOpacity:opacity, map:map});
 }
 
@@ -54,7 +51,6 @@ function calculateOpacity(rate) {
   } else {
     return opacity;
   }
-
 }
 
 // Output cell deets to console
@@ -63,108 +59,72 @@ function printCell(lng,lat) {
   console.log(rect.cell.fillColor);
 }
 
-// Push cell to db
-function initDBLocation(lng, lat) {
-  var name = lng.toString() + "," + lat.toString();
-  locations.child(name).update({
-    x:lng,
-    y:lat,
-  });
+function getWidth(level){
+  return 1/Math.pow(2, level)
 }
 
-function initCells(west, south, east, north) {
+// Init draw cells on map
+function drawCell(x, y, level) {
 
-  // Init draw cells on map
-  function drawCell(x, y) {
+  width = getWidth(level)
 
-    var latNorth = (y + 1);
-    var latSouth = y;
-    var lngEast = (x + 1);
-    var lngWest = x;
+  var cellBounds = {
+    north: y + width,
+    south: y,
+    east: x + width,
+    west: x
+  };
 
-    cellBounds = {
-      north: latNorth,
-      south: latSouth,
-      east: lngEast,
-      west: lngWest
-    };
-
-    return makeSquare(cellBounds, map, shades[5]);
-  }
-
-  var bounds = {
-    north: north + 1,
-    east: east + 1,
-    south: south,
-    west: west
-  }
-
-  // Init array
-  cells = [];
-
-  // 2D for loop for lat/lng
-  for(x = bounds.west; x < bounds.east; ++x) {
-    cells.push([]);
-    for(y = bounds.south; y < bounds.north; ++y) {
-      cells[x-bounds.west].push({cell:drawCell(x, y)});
-      initDBLocation(x,y);
-    }
-  }
-
-  // TODO Initial shading
-
+  return makeSquare(cellBounds, map, shades[5]);
 
 }
+
 
 function init() {
 
   // Prepare the map
   var mapCanvas = document.getElementById('map');
   var mapOptions = {
-    draggable: false,
-    zoomControl: false,
-    scrollwheel: false,
-    disableDoubleClickZoom: true,
-    mapTypeControl: false,
-    zoomControl: false,
+    //draggable: false,
+    //zoomControl: false,
+    //scrollwheel: false,
+    //disableDoubleClickZoom: true,
+    //mapTypeControl: false,
+    //zoomControl: false,
     center: new google.maps.LatLng(28, -84),
     zoom: 7,
     disableDefaultUI: true
   };
   map = new google.maps.Map(mapCanvas, mapOptions);
 
-  initCells(-88, 25, -80, 31);
-
-  mapBounds = {
-    north: 31,
-    south: 25,
-    east: -80,
-    west: -88
-  };
-
-  // tallahassee=[-85,30,-84,31]
-
-
-  /*for(arr in cells){
-    for(entry in arr){
-      initDBLocation(entry.cell.)
-    }
-  }*/
-
 } // init()
+
+// Listen for new nodes
+locations.on("child_added", function(snapshot) {
+  var cellName = snapshot.key();
+  var cell = snapshot.val();
+  console.log("Added new cell " + cellName + " at " + cellVal.x + ", " + cellVal.y);
+  cells[cellName] = drawCell(cellVal.x, cellVal.y, cellVal.level)
+});
 
 // Listen for updates
 locations.on("child_changed", function(snapshot) {
-  var changedPost = snapshot.val();
-  console.log("Updated on cell " + changedPost.x + " " + changedPost.y);
-
-  var temp = getCellFromLngLat(changedPost.x, changedPost.y);
-
-
-  console.log("Needs array " + (temp.x).toString() + " " + (temp.y).toString());
-  shadeCell(temp.x, temp.y, calculateOpacity(changedPost.velocity));
+  var cellName = snapshot.key();
+  var cellVal = snapshot.val();
+  console.log("Updated on cell " + cellName);
+  var cell = cells[cellName]
+  if(cell == undefined) {
+    cells[cellName] = drawCell(cellVal.x, cellVal.y, cellVal.level);
+    cell = cells[cellName];
+  }
+  shadeCell(cell, calculateOpacity(cellVal.velocity));
 });
 
+// Listen for nodes shutting down
+locations.on("child_removed", function(snapshot){
+  var cellName = snapshot.key();
+  delete cells[cellName];
+});
 
 // Set the listen to init everything on load
 google.maps.event.addDomListener(window, 'load', init);
