@@ -103,8 +103,8 @@ function init() {
 locations.on("child_added", function(snapshot) {
   var cellName = snapshot.key();
   var cell = snapshot.val();
-  console.log("Added new cell " + cellName + " at " + cellVal.x + ", " + cellVal.y);
-  cells[cellName] = drawCell(cellVal.x, cellVal.y, cellVal.level)
+  console.log("Added new cell " + cellName + " at " + cell.x + ", " + cell.y);
+  cells[cellName] = drawCell(cell.x, cell.y, cell.level)
 });
 
 // Listen for updates

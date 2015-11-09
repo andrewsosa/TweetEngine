@@ -1,11 +1,9 @@
-# Import the necessary methods from tweepy library
-from tweepy.streaming import StreamListener
-from tweepy import OAuthHandler
-from tweepy import Stream
-
 # Unofficial REST Firebase API
 from firebase import Firebase
 from firebase_streaming import FirebaseListener
+
+#
+from engine_node import EngineNode
 
 # Other libs
 import json, threading, datetime
@@ -13,7 +11,7 @@ import json, threading, datetime
 # Tokens for Firebase API
 firebase_url = 'https://tweetengine.firebaseio.com/'
 
-class NodeController(StreamListener):
+class Moderator():
 
     def __init__(self):
 
@@ -23,8 +21,8 @@ class NodeController(StreamListener):
         # Firebase
         self.firebase = Firebase(firebase_url)
         self.messages = self.firebase.child("messages")
-        self.firebase = self.firebase.child("controller")
-        self.name = "controller"
+        self.name = "Moderator" # TODO dynamic naming
+        self.firebase = self.firebase.child("moderators").child(self.name)
         self.nick = self.name
 
         # Begin listening for messages
@@ -40,13 +38,22 @@ class NodeController(StreamListener):
         # Wait for receiver to terminate
         #self.receiver.join()
 
-
-
     def close(self):
-        self.firebase.remove()
-        self.receiver.stop()
+        try:
+            self.firebase.remove()
+            self.receiver.stop()
+        except RuntimeError:
+            self.respond("RuntimeError thrown on shutdown.")
         self.respond("Shutting down...")
 
+    def launch_node(self, x, y, level):
+        node = EngineNode([x,y],level)
+        node.start()
+        
+        try:
+            node.join()
+        except:
+            node.respond("Unhandled error, shutting down.")
 
     # Handles incoming control signals
     def on_command(self, command):
@@ -73,8 +80,13 @@ class NodeController(StreamListener):
             self.respond("You said my name!")
 
             # Things we can do
-            if tokens[1] == "nick" and len(tokens) == 3:
-                self.nick = tokens[2]
+            if tokens[1] == "make" and len(tokens) == 5:
+                x = int(tokens[2])
+                y = int(tokens[3])
+                l = int(tokens[4])
+                t = threading.Thread(target=self.launch_node, args=(x,y,l))
+                t.daemon = True
+                t.start()
 
             elif tokens[1] == "stop" or tokens[1] == "close":
                 self.close()
@@ -98,9 +110,12 @@ class NodeController(StreamListener):
 
 if __name__ == '__main__':
 
-    controller = NodeController()
-    #node.start()
-    #controller.join()
+    controller = Moderator()
+
+    try:
+        controller.join()
+    except:
+        controller.respond("Unhandled error, shutting down.")
 
     #try:
     #    raw_input("Enter to stop \n")
