@@ -123,7 +123,7 @@ class FirebaseListener:
         self.remote_thread.close()
         self.remote_thread.join()
 
-    def wait(self):
+    def join(self):
         self.remote_thread.join()
 
 

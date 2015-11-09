@@ -55,6 +55,7 @@ class EngineNode(StreamListener):
         # Signal online
         self.respond(self.nick + " online!")
 
+
     # Start node
     def start(self):
         # This handles Twitter authetification and the connection to Twitter Streaming API
@@ -68,23 +69,46 @@ class EngineNode(StreamListener):
         # Begin the metadata threads
         self.launch_meta_threads()
 
+        self.respond("Starting streaming!")
+
+
+    def join(self):
+        # Wait for receiver to close
+        self.receiver.join()
+
 
     def stop(self):
+        # Close the mining-related threads
         self.stream.disconnect()
         self.velocity_thread.cancel()
         self.firebase.remove()
 
+
     def close(self):
-        self.receiver.stop()
+        # Try stopping before closing
+        try:
+            self.stop()
+        except:
+            pass
+
+        # End chat and wrap up
+        try:
+            self.receiver.stop()
+        except:
+            self.respond("Receiver threw error on shutdown.")
+
+        self.respond("Shutting down...")
+
 
     def calcWidth(self,level):
         return 1.0/pow(2, level)
+
 
     # Runs for every tweet
     def on_data(self, data):
         try:
             json_data = json.loads(data)
-            print json_data['created_at'] + " " + json_data['text']
+            print self.name + ":\t" + json_data['created_at'] + " " + json_data['text']
         except:
             print "Data " + str(data)
         self.tweet_count = self.tweet_count + 1
@@ -116,29 +140,29 @@ class EngineNode(StreamListener):
 
         # Attempt to parse for commands
         tokens = text.split()
-        try:
 
-            # Check if we are command target
-            if tokens[0][1:] == self.name or tokens[0][1:] == self.nick:
-                self.respond("You said my name!")
+        #try:
+        # Check if we are command target
+        if tokens[0][1:] == self.name or tokens[0][1:] == self.nick:
+            self.respond("You said my name!")
 
-                # Things we can do
-                if tokens[1] == "nick" and len(tokens) == 3:
-                    self.nick = tokens[2]
+            # Things we can do
+            if tokens[1] == "nick" and len(tokens) == 3:
+                self.nick = tokens[2]
 
-                if tokens[1] == "bounds" or tokens[1] == "coords"
-                    respond(self.location)
+            elif tokens[1] == "bounds" or tokens[1] == "coords":
+                self.respond(self.location)
 
-                else:
-                    respond("Sorry, I don't recognize that command.")
-                    print "Unrecognized command: " + text
+            elif tokens[1] == "close" or tokens[1] == "stop":
+                self.close()
 
+            else:
+                self.respond("Sorry, I don't recognize that command.")
+                print "Unrecognized command: " + text
 
-        except:
-            print "Exception in parsing: " + text
-            pass
-
-        #print tokens
+        #except:
+        #    print "Exception in parsing: " + text
+        #    pass
 
 
     def respond(self, message):
@@ -171,8 +195,8 @@ class EngineNode(StreamListener):
         self.tweet_rate_total = sum(self.tweet_rate_queue) / len(self.tweet_rate_queue)
 
         # Print results
-        print "RECENT RATE: " + str(self.tweet_rate_recent) + " per second."
-        print "TOTAL RATE: " + str(self.tweet_rate_total) + " per second."
+        print self.name + ":\t" + "RECENT RATE: " + str(self.tweet_rate_recent) + " per second."
+        print self.name + ":\t" + "TOTAL RATE: " + str(self.tweet_rate_total) + " per second."
 
         # Push results to server
         self.firebase.update({'velocity':self.tweet_rate_recent})
@@ -191,10 +215,10 @@ if __name__ == '__main__':
     node = EngineNode(tallahassee, level)
     #node.start()
 
-    try:
-        raw_input("Enter to stop \n")
-    except KeyboardInterrupt:
-        print "Whoops! KeyboardInterrupt"
+    #try:
+    #    raw_input("Enter to stop \n")
+    #except KeyboardInterrupt:
+    #    print "Whoops! KeyboardInterrupt"
 
     #node.stop()
-    node.close()
+    #node.join()
