@@ -2,6 +2,8 @@
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
 from tweepy import Stream
+from tweepy.api import API
+
 
 # Unofficial REST Firebase API
 from firebase import Firebase
@@ -22,6 +24,8 @@ firebase_url = 'https://tweetengine.firebaseio.com/'
 class EngineNode(StreamListener):
 
     def __init__(self, xy, level):
+
+        self.__init__()
 
         # Tweet Metadata
         self.tweet_count = 0
@@ -54,6 +58,10 @@ class EngineNode(StreamListener):
 
         # Signal online
         self.respond(self.nick + " online!")
+
+        # Required by Tweet API since this is a stream listener
+        #self.api = API()
+
 
 
     # Start node
@@ -105,21 +113,32 @@ class EngineNode(StreamListener):
 
 
     # Runs for every tweet
-    def on_data(self, data):
-        try:
-            json_data = json.loads(data)
-            print self.name + ":\t" + json_data['created_at'] + " " + json_data['text']
-        except:
-            print "Data " + str(data)
+    def on_status(self, status):
+        self.log(status._json['created_at'] + "\t" + status._json['text'].replace('\n',' '))
         self.tweet_count = self.tweet_count + 1
         return True
 
+    def on_warning(self, warning):
+        self.respond("I just got this warning, and I don't know what to do:")
+        self.respond(str(warning))
+        return True
+
+    #def on_data(self, data):
+    #    try:
+    #        json_data = json.loads(data)
+    #        print self.name + ":\t" + json_data['created_at'] + " " + json_data['text']
+    #    except:
+    #        print "Data " + str(data)
+    #    self.tweet_count = self.tweet_count + 1
+    #    return True
+
     # Catches errors
     def on_error(self, status):
-        print "Error " + str(status)
-        if status == 420:
-            print("420 error.")
-            return False
+        #print "ERROR " + str(status)
+        self.log("ERROR" + str(status))
+        #if status == 420:
+        #    print("420 error.")
+        return False
 
     # Handles incoming control signals
     def on_command(self, command):
@@ -158,7 +177,7 @@ class EngineNode(StreamListener):
 
             else:
                 self.respond("Sorry, I don't recognize that command.")
-                print "Unrecognized command: " + text
+                self.log("Unrecognized command: " + text)
 
         #except:
         #    print "Exception in parsing: " + text
@@ -195,8 +214,10 @@ class EngineNode(StreamListener):
         self.tweet_rate_total = sum(self.tweet_rate_queue) / len(self.tweet_rate_queue)
 
         # Print results
-        print self.name + ":\t" + "RECENT RATE: " + str(self.tweet_rate_recent) + " per second."
-        print self.name + ":\t" + "TOTAL RATE: " + str(self.tweet_rate_total) + " per second."
+        #print self.name + ":\t" + "RECENT RATE: " + str(self.tweet_rate_recent) + " per second."
+        self.log("RECENT RATE: " + str(self.tweet_rate_recent) + " per second.")
+        #print self.name + ":\t" + "TOTAL RATE: " + str(self.tweet_rate_total) + " per second."
+        self.log("TOTAL RATE: " + str(self.tweet_rate_total) + " per second.")
 
         # Push results to server
         self.firebase.update({'velocity':self.tweet_rate_recent})
@@ -206,6 +227,9 @@ class EngineNode(StreamListener):
         self.velocity_thread.daemon = True
         self.velocity_thread.start()
 
+    def log(self, message):
+        print self.nick + ":\t" + message
+
 if __name__ == '__main__':
 
     # TODO - UPDATE TO RECEIVE LOCATION VIA LAUNCHER
@@ -213,7 +237,7 @@ if __name__ == '__main__':
     level = 0
 
     node = EngineNode(tallahassee, level)
-    #node.start()
+    node.start()
 
     #try:
     #    raw_input("Enter to stop \n")
