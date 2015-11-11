@@ -25,6 +25,8 @@ class EngineNode(StreamListener):
 
     def __init__(self, xy, level):
 
+        self.__init__()
+
         # Tweet Metadata
         self.tweet_count = 0
         self.tweet_rate_recent = 0
@@ -58,7 +60,7 @@ class EngineNode(StreamListener):
         self.respond(self.nick + " online!")
 
         # Required by Tweet API since this is a stream listener
-        self.api = API()
+        #self.api = API()
 
 
 
