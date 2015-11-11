@@ -25,7 +25,7 @@ class EngineNode(StreamListener):
 
     def __init__(self, xy, level):
 
-        self.__init__()
+        StreamListener.__init__(self)
 
         # Tweet Metadata
         self.tweet_count = 0
