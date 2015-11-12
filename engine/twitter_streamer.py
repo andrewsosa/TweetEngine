@@ -123,7 +123,7 @@ class TwitterStreamer(StreamListener):
     def do_location_updates(self, key, dbkey):
         ref = self.firebase.child("locations").child(dbkey)
         velocity = float(self.bucket[key]) / 5.0
-        print key + "\t" + str(velocity)
+        #print key + "\t" + str(velocity)
         #print key + " " + str(self.bucket[key]) + " " + str(velocity)
         ref.update({'velocity':velocity})
 
