@@ -121,8 +121,11 @@ class TwitterStreamer(StreamListener):
 
 
     def do_location_updates(self, key, dbkey):
+
+        period = 10
+
         ref = self.firebase.child("locations").child(dbkey)
-        velocity = float(self.bucket[key]) / 5.0
+        velocity = float(self.bucket[key]) / float(period)
         #print key + "\t" + str(velocity)
         #print key + " " + str(self.bucket[key]) + " " + str(velocity)
         ref.update({'velocity':velocity})
@@ -130,7 +133,7 @@ class TwitterStreamer(StreamListener):
         self.bucket[key] = 0
 
         # Rerun again in 5 seconds
-        t = threading.Timer(5, self.do_location_updates, args=(key, dbkey))
+        t = threading.Timer(period, self.do_location_updates, args=(key, dbkey))
         t.daemon = True
         t.start()
 
