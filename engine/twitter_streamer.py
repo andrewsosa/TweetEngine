@@ -104,7 +104,7 @@ class TwitterStreamer(StreamListener):
         return coordinates
 
     def verify_location(self, coords):
-        return true
+        return True
         # [[x1,y1],[x1,y2],[x2,y1],[x2,y2]]
         west = coords[0][0] > self.location[0]
         south = coords[0][1] > self.location[1]
