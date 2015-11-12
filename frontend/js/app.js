@@ -45,7 +45,7 @@ function shadeCell(rect, opacity) {
 }
 
 function calculateOpacity(rate) {
-  var opacity = rate/10;
+  var opacity = rate/3;
   if(opacity > 100) {
     return 100;
   } else {

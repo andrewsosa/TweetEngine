@@ -219,8 +219,8 @@ class TwitterStreamer(StreamListener):
 if __name__ == '__main__':
 
     # TODO - UPDATE TO RECEIVE LOCATION VIA LAUNCHER
-    southwest=[-86,29]
-    northeast=[-83,32]
+    southwest=[-87,24]
+    northeast=[-81,32]
 
     streamer = TwitterStreamer(southwest, northeast)
     streamer.start()
