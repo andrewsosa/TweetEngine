@@ -82,6 +82,7 @@ class EngineNode(StreamListener):
 
     def join(self):
         # Wait for receiver to close
+        self.receiver.stop()
         self.receiver.join()
 
 
@@ -135,7 +136,7 @@ class EngineNode(StreamListener):
     # Catches errors
     def on_error(self, status):
         #print "ERROR " + str(status)
-        self.log("ERROR" + str(status))
+        self.log("ERROR " + str(status))
         #if status == 420:
         #    print("420 error.")
         return False
@@ -214,10 +215,8 @@ class EngineNode(StreamListener):
         self.tweet_rate_total = sum(self.tweet_rate_queue) / len(self.tweet_rate_queue)
 
         # Print results
-        #print self.name + ":\t" + "RECENT RATE: " + str(self.tweet_rate_recent) + " per second."
-        self.log("RECENT RATE: " + str(self.tweet_rate_recent) + " per second.")
-        #print self.name + ":\t" + "TOTAL RATE: " + str(self.tweet_rate_total) + " per second."
-        self.log("TOTAL RATE: " + str(self.tweet_rate_total) + " per second.")
+        #self.log("RECENT RATE: " + str(self.tweet_rate_recent) + " per second.")
+        #self.log("TOTAL RATE: " + str(self.tweet_rate_total) + " per second.")
 
         # Push results to server
         self.firebase.update({'velocity':self.tweet_rate_recent})

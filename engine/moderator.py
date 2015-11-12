@@ -32,6 +32,9 @@ class Moderator():
         # Signal online
         self.respond(self.nick + " online!")
 
+        # Node storate
+        self.nodes = []
+
 
     def join(self):
         pass
@@ -49,11 +52,13 @@ class Moderator():
     def launch_node(self, x, y, level):
         node = EngineNode([x,y],level)
         node.start()
-        
-        try:
-            node.join()
-        except:
-            node.respond("Unhandled error, shutting down.")
+
+        self.nodes.append(node)
+
+        #try:
+        #    node.join()
+        #except:
+        #    node.respond("Unhandled error, shutting down.")
 
     # Handles incoming control signals
     def on_command(self, command):
@@ -88,7 +93,15 @@ class Moderator():
                 t.daemon = True
                 t.start()
 
+            elif tokens[1] =="stopall":
+                try:
+                    for n in self.nodes:
+                        n.stop()
+                except:
+                    pass
+
             elif tokens[1] == "stop" or tokens[1] == "close":
+
                 self.close()
 
             else:
