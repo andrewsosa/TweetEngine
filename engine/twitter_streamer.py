@@ -148,7 +148,7 @@ class TwitterStreamer(StreamListener):
         if(self.verify_location(coords)):
             #print coords
 
-            print status['text']
+            print json['text']
             # Average location
             long = int((coords[0][0] + coords[3][0]) / 2)
             lat  = int((coords[0][1] + coords[3][1]) / 2)
