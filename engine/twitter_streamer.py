@@ -4,13 +4,12 @@ from tweepy import OAuthHandler
 from tweepy import Stream
 from tweepy.api import API
 
-
 # Unofficial REST Firebase API
 from firebase import Firebase
 from firebase_streaming import FirebaseListener
 
 # Other libs
-import json, threading, datetime
+import json, threading, datetime, random
 
 # Variables that contains the user credentials to access Twitter API
 access_token = "472058940-Krvbmk4h58PPAwjqnhbgOwmBsIUVrJp3L1fGGq5o"
@@ -26,13 +25,6 @@ class TwitterStreamer(StreamListener):
     def __init__(self, southwest, northeast):
 
         StreamListener.__init__(self)
-
-        # Tweet Metadata
-        self.tweet_count = 0
-        self.tweet_rate_recent = 0
-        self.tweet_rate_total = 0
-        self.tweet_rate_queue = []
-        self.last_velocity_update = datetime.datetime.now()
 
         # Lock and target location
         self.lock = threading.Lock()
@@ -77,14 +69,6 @@ class TwitterStreamer(StreamListener):
         #self.velocity_thread.cancel()
         #self.firebase.remove()
 
-
-    def close(self):
-        # Try stopping before closing
-        try:
-            self.stop()
-        except:
-            pass
-
         # End chat and wrap up
         try:
             self.receiver.stop()
@@ -92,6 +76,10 @@ class TwitterStreamer(StreamListener):
             self.respond("Receiver threw error on shutdown.")
 
         self.respond("Shutting down...")
+
+        for key in self.bucket.keys():
+            self.firebase.child("locations").child(key+",0").remove()
+
 
     #
     #   Data Management
@@ -104,6 +92,7 @@ class TwitterStreamer(StreamListener):
         return coordinates
 
     def verify_location(self, coords):
+        # This function may eventually become useful. 
         return True
         # [[x1,y1],[x1,y2],[x2,y1],[x2,y2]]
         west = coords[0][0] > self.location[0]
@@ -152,20 +141,18 @@ class TwitterStreamer(StreamListener):
             #print coords
 
             print json['text']
-            # Average location
-            long = int((coords[0][0] + coords[3][0]) / 2)
-            lat  = int((coords[0][1] + coords[3][1]) / 2)
 
-            # Correct for negatives
-            long = (long - 1) if long < 0 else long
-            lat  = (lat  - 1) if lat < 0 else lat
+
+            # Random location within bounding box TODO improve this?
+            long = int(random.uniform(coords[0][0], coords[3][0]))
+            lat  = int(random.uniform(coords[0][1], coords[3][1]))
 
             # Proper storage
             key = str(long) + "," + str(lat)
             if key not in self.bucket:
                 self.init_node(key+",0", long, lat)
                 self.bucket[key] = self.bucket.get(key,0) + 1
-                self.do_location_updates(key, key+",0")
+                self.do_location_updates(key, key+",0") # TODO update this to a thread launch
             else:
                 self.bucket[key] = self.bucket[key] + 1
 
@@ -230,8 +217,3 @@ if __name__ == '__main__':
 
     raw_input("space to stop")
     streamer.stop()
-
-    print streamer.bucket
-
-    for key in streamer.bucket.keys():
-        streamer.firebase.child("locations").child(key+",0").remove()
