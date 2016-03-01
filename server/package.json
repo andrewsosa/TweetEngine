@@ -1,0 +1,17 @@
+{
+  "name": "tweetengine",
+  "main": "server.js",
+  "dependencies": {
+    "express": "~4.0.0",
+    "mongoose": "~3.8.0",
+    "body-parser": "~1.0.1"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "version": "1.0.0",
+  "devDependencies": {},
+  "author": "AndrewTheWizard",
+  "license": "ISC",
+  "description": ""
+}

@@ -5,8 +5,8 @@ from tweepy import Stream
 from tweepy.api import API
 
 # Unofficial REST Firebase API
-from firebase import Firebase
-from firebase_streaming import FirebaseListener
+#from firebase import Firebase
+#from firebase_streaming import FirebaseListener
 
 # Other libs
 import json, threading, datetime, random
@@ -18,27 +18,40 @@ consumer_key = "DhqgE1tnvTH1KJDNPhkSkzDRZ"
 consumer_secret = "Frc9EA7PROJD366dGHj89JZPqqiqlwStK0yAqFoNnbxUsrdn9Y"
 
 # Tokens for Firebase API
-firebase_url = 'https://tweetengine.firebaseio.com/'
+#firebase_url = 'https://tweetengine.firebaseio.com/'
+
+LONG = 'longitude'
+LAT  = 'latitude'
 
 class TwitterStreamer(StreamListener):
 
-    def __init__(self, southwest, northeast):
+    def __init__(self, credentials, node, southwest, northeast):
+
+        print "Beginning TwitterStreamer init"
+
 
         StreamListener.__init__(self)
 
         # Lock and target location
         self.lock = threading.Lock()
         self.bucket = {}
-        self.location = [southwest[0],southwest[1],northeast[0],northeast[1]]
+        self.location = [southwest[LONG],southwest[LAT],northeast[LONG],northeast[LAT]]
+
+        self.creds = credentials
 
         # Firebase & Control
-        self.firebase = Firebase(firebase_url)
-        self.messages = self.firebase.child("messages")
-        self.name = "Streamer"
-        self.nick = self.name
+        #self.firebase = Firebase(firebase_url)
+        #self.messages = self.firebase.child("messages")
+        #self.name = "Streamer"
+        #self.nick = self.name
         #self.receiver = FirebaseListener(str(self.messages), self.on_command)
         #self.receiver.start()
         #self.respond(self.nick + " online!")
+
+        # Upload handler
+        self.node = node
+
+        print "TwitterStreamer init successful"
 
     #
     #   Threading Functiosn
@@ -46,39 +59,62 @@ class TwitterStreamer(StreamListener):
 
     # Start node
     def start(self):
+
+        print "Starting TwitterStreamer"
+
         # This handles Twitter authetification and the connection to Twitter Streaming API
+        #auth = OAuthHandler(self.creds['consumer_key'], self.creds['consumer_secret'])
+        #auth.set_access_token(self.creds['access_token'], self.creds['access_token_secret'])
         auth = OAuthHandler(consumer_key, consumer_secret)
         auth.set_access_token(access_token, access_token_secret)
+
+        # 2nd parameter self serves as the StreamListener object
         self.stream = Stream(auth, self)
+
+        print "Created Stream object"
+
+        #print self.location
 
         # Start streaming with right parameters
         self.stream.filter(locations=self.location, async=True)
+        #self.respond("Starting streaming!")
 
-        self.respond("Starting streaming!")
+        print "TwitterStreamer started successfully"
+
+        print "Scheduling auto-shutdown"
+        t = threading.Timer(15, self.stop)
+        t.daemon = True
+        t.start()
 
 
-    def join(self):
-        # Wait for receiver to close
-        self.receiver.stop()
-        self.receiver.join()
+
+    #def join(self):
+    #    # Wait for receiver to close
+    #    self.receiver.stop()
+    #    self.receiver.join()
 
 
     def stop(self):
+
+        print "Stopping TwitterStreamer"
+
         # Close the mining-related threads
         self.stream.disconnect()
         #self.velocity_thread.cancel()
         #self.firebase.remove()
 
+        print "TwitterStreamer stopped"
+
         # End chat and wrap up
-        try:
-            self.receiver.stop()
-        except:
-            self.respond("Receiver threw error on shutdown.")
+        #try:
+        #    self.receiver.stop()
+        #except:
+        #    self.respond("Receiver threw error on shutdown.")
 
-        self.respond("Shutting down...")
+        #self.respond("Shutting down...")
 
-        for key in self.bucket.keys():
-            self.firebase.child("locations").child(key+",0").remove()
+        #for key in self.bucket.keys():
+        #    self.firebase.child("locations").child(key+",0").remove()
 
 
     #
@@ -86,13 +122,12 @@ class TwitterStreamer(StreamListener):
     #
 
     def find_location(self, json):
-
         # Primary check
         coordinates = json['place']['bounding_box']['coordinates'][0]
         return coordinates
 
     def verify_location(self, coords):
-        # This function may eventually become useful. 
+        # This function may eventually become useful.
         return True
         # [[x1,y1],[x1,y2],[x2,y1],[x2,y2]]
         west = coords[0][0] > self.location[0]
@@ -101,30 +136,18 @@ class TwitterStreamer(StreamListener):
         north = coords[3][1] < self.location[3]
         return west and south and east and north
 
-    def init_node(self, dbkey, long, lat):
-        # Init node stats
-        ref = self.firebase.child("locations").child(dbkey)
-        ref.update({'x':long})
-        ref.update({'y':lat})
-        ref.update({'level':0})
-
-
-    def do_location_updates(self, key, dbkey):
+    def do_location_updates(self, key):
 
         period = 10
-
-        ref = self.firebase.child("locations").child(dbkey)
         velocity = float(self.bucket[key]) / float(period)
-        #print key + "\t" + str(velocity)
-        #print key + " " + str(self.bucket[key]) + " " + str(velocity)
-        ref.update({'velocity':velocity})
-
+        data = {'velocity':velocity}
+        self.node.post_results(data)
         self.bucket[key] = 0
 
         # Rerun again in 5 seconds
-        t = threading.Timer(period, self.do_location_updates, args=(key, dbkey))
-        t.daemon = True
-        t.start()
+        #t = threading.Timer(period, self.do_location_updates, args=(key, dbkey))
+        #t.daemon = True
+        #t.start()
 
 
     #
@@ -134,14 +157,15 @@ class TwitterStreamer(StreamListener):
     # Runs for every tweet
     def on_status(self, status):
 
+        print "Status received!"
+
         json = status._json
         coords = self.find_location(json)
 
         if(self.verify_location(coords)):
             #print coords
 
-            print json['text']
-
+            #print json['text']
 
             # Random location within bounding box TODO improve this?
             long = int(random.uniform(coords[0][0], coords[3][0]))
@@ -150,18 +174,16 @@ class TwitterStreamer(StreamListener):
             # Proper storage
             key = str(long) + "," + str(lat)
             if key not in self.bucket:
-                self.init_node(key+",0", long, lat)
                 self.bucket[key] = self.bucket.get(key,0) + 1
-                self.do_location_updates(key, key+",0") # TODO update this to a thread launch
+                self.do_location_updates(key) # TODO update this to a thread launch
             else:
                 self.bucket[key] = self.bucket[key] + 1
 
         return True
 
     def on_warning(self, warning):
-        self.respond("I just got this warning, and I don't know what to do:")
-        self.respond(str(warning))
-        return True
+        print "WARNING: " + str(warning)
+        return False
 
     # Catches errors
     def on_error(self, status):
@@ -197,11 +219,16 @@ class TwitterStreamer(StreamListener):
                 self.close()
 
             else:
-                self.respond("Sorry, I don't recognize that command.")
+                #self.respond("Sorry, I don't recognize that command.")
                 self.log("Unrecognized command: " + text)
 
+    #
+    #   Utility functions
+    #
+
     def respond(self, message):
-        self.messages.push({'name':self.nick, 'text':message})
+        #self.messages.push({'name':self.nick, 'text':message})
+        pass
 
     def log(self, message):
         print self.nick + ":\t" + message
