@@ -1,2 +1,3 @@
 *.pyc
 engine/venv
+engine/logs
