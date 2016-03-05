@@ -2,9 +2,11 @@
   "name": "tweetengine",
   "main": "server.js",
   "dependencies": {
+    "body-parser": "~1.0.1",
     "express": "~4.0.0",
-    "mongoose": "~3.8.0",
-    "body-parser": "~1.0.1"
+    "firebase": "^2.4.1",
+    "human-readable-ids": "^1.0.1",
+    "mongoose": "~3.8.0"
   },
   "scripts": {
     "start": "node server.js"

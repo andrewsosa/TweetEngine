@@ -59,14 +59,8 @@ function printCell(lng,lat) {
   console.log(rect.cell.fillColor);
 }
 
-function getWidth(level){
-  return 1/Math.pow(2, level)
-}
-
 // Init draw cells on map
-function drawCell(x, y, level) {
-
-  width = getWidth(level)
+function drawCell(x, y, width) {
 
   var cellBounds = {
     north: y + width,
@@ -104,7 +98,7 @@ locations.on("child_added", function(snapshot) {
   var cellName = snapshot.key();
   var cell = snapshot.val();
   console.log("Added new cell " + cellName + " at " + cell.x + ", " + cell.y);
-  cells[cellName] = drawCell(cell.x, cell.y, cell.level)
+  cells[cellName] = drawCell(cell.x, cell.y, cell.width)
 });
 
 // Listen for updates
@@ -114,7 +108,7 @@ locations.on("child_changed", function(snapshot) {
   console.log("Updated on cell " + cellName);
   var cell = cells[cellName]
   if(cell == undefined) {
-    cells[cellName] = drawCell(cellVal.x, cellVal.y, cellVal.level);
+    cells[cellName] = drawCell(cellVal.x, cellVal.y, cellVal.width);
     cell = cells[cellName];
   }
   shadeCell(cell, calculateOpacity(cellVal.velocity));

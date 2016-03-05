@@ -7,6 +7,9 @@
 var express     = require('express');        // call express
 var app         = express();                 // define our app using express
 var bodyParser  = require('body-parser');
+var firebase    = require('firebase');
+
+var hri         = require('human-readable-ids').hri;
 
 // configure app to use bodyParser()
 // this will let us get the data from a POST
@@ -14,6 +17,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 var port = process.env.PORT || 8080;        // set our port
+var ref  = new Firebase("https://tweetengine.firebaseio.com/locations");
 
 // ROUTES FOR OUR API
 // =============================================================================
@@ -22,7 +26,7 @@ var router = express.Router();              // get an instance of the express Ro
 // middleware to use for all requests
 router.use(function(req, res, next) {
     // do logging
-    console.log('Someone is connecting!');
+    // console.log('Someone is connecting!');
     next(); // make sure we go to the next routes and don't stop here
 });
 
@@ -38,12 +42,13 @@ router.route('/connect')
     .post(function(req, res) {
 
         // assign the new node a sector
-        x = 30;
-        y = -85;
+        x = -85;
+        y = 30;
 
         // Let them know
         res.json({
             message: 'Connection successful.',
+            id: hri.random(),
             target: {
                 southwest: {
                     longitude: x,
@@ -53,19 +58,39 @@ router.route('/connect')
                     longitude: x + 1,
                     latitude: y + 1
                 }
-            }
+            },
+            extras: ['python']
         });
 
     });
 
 
 // Used by actively working nodes
-router.route('/update')
+router.route('/upload')
 
     // upload new data about a point
     .post(function(req, res){
 
+        console.log("Receiving update!")
+
         // extract location and velocity
+        console.log(req.body.velocity);
+        console.log(req.body.acceleration);
+        console.log(req.body.torque);
+
+        var loc = ref.child(req.body.id);
+        loc.set({
+            x: req.body.x,
+            y: req.body.y,
+            width: req.body.width,
+            velocity: req.body.velocity,
+            acceleration: req.body.acceleration,
+            torque: req.body.torque
+        });
+
+        res.json({
+            message: 'Upload received.'
+        })
 
     });
 

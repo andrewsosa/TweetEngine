@@ -4,18 +4,11 @@ from tweepy import OAuthHandler
 from tweepy import Stream
 from tweepy.api import API
 
-# Unofficial REST Firebase API
-#from firebase import Firebase
-#from firebase_streaming import FirebaseListener
+# My libaries
+from event_manager import EventManager
 
 # Other libs
-import json, threading, datetime, random
-
-# Variables that contains the user credentials to access Twitter API
-access_token = "472058940-Krvbmk4h58PPAwjqnhbgOwmBsIUVrJp3L1fGGq5o"
-access_token_secret = "wdPMhCxc8jj3uWkVwDAwlVTCYG6kvFJuWn2bqP08g1OCi"
-consumer_key = "DhqgE1tnvTH1KJDNPhkSkzDRZ"
-consumer_secret = "Frc9EA7PROJD366dGHj89JZPqqiqlwStK0yAqFoNnbxUsrdn9Y"
+import json, threading, datetime, random, logging
 
 # Tokens for Firebase API
 #firebase_url = 'https://tweetengine.firebaseio.com/'
@@ -25,19 +18,19 @@ LAT  = 'latitude'
 
 class TwitterStreamer(StreamListener):
 
-    def __init__(self, credentials, node, southwest, northeast):
+    def __init__(self, credentials, node, southwest, northeast, extras):
 
-        print "Beginning TwitterStreamer init"
-
+        logging.info("Beginning TwitterStreamer init")
 
         StreamListener.__init__(self)
 
         # Lock and target location
         self.lock = threading.Lock()
-        self.bucket = {}
+        self.buckets = {}
+        self.deltas = {}
         self.location = [southwest[LONG],southwest[LAT],northeast[LONG],northeast[LAT]]
-
         self.creds = credentials
+        self.event_manager = EventManager()
 
         # Firebase & Control
         #self.firebase = Firebase(firebase_url)
@@ -51,7 +44,7 @@ class TwitterStreamer(StreamListener):
         # Upload handler
         self.node = node
 
-        print "TwitterStreamer init successful"
+        logging.info("TwitterStreamer init successful")
 
     #
     #   Threading Functiosn
@@ -60,31 +53,26 @@ class TwitterStreamer(StreamListener):
     # Start node
     def start(self):
 
-        print "Starting TwitterStreamer"
+        logging.info("Starting TwitterStreamer")
 
         # This handles Twitter authetification and the connection to Twitter Streaming API
-        #auth = OAuthHandler(self.creds['consumer_key'], self.creds['consumer_secret'])
-        #auth.set_access_token(self.creds['access_token'], self.creds['access_token_secret'])
-        auth = OAuthHandler(consumer_key, consumer_secret)
-        auth.set_access_token(access_token, access_token_secret)
+        auth = OAuthHandler(self.creds['consumer_key'], self.creds['consumer_secret'])
+        auth.set_access_token(self.creds['access_token'], self.creds['access_token_secret'])
 
         # 2nd parameter self serves as the StreamListener object
         self.stream = Stream(auth, self)
 
-        print "Created Stream object"
-
-        #print self.location
+        logging.info("Created Stream object")
 
         # Start streaming with right parameters
-        self.stream.filter(locations=self.location, async=True)
-        #self.respond("Starting streaming!")
-
-        print "TwitterStreamer started successfully"
-
-        print "Scheduling auto-shutdown"
-        t = threading.Timer(15, self.stop)
+        #self.stream.filter(locations=self.location, async=True)
+        t = threading.Thread(target=self.stream.filter, kwargs={'locations':self.location, 'async':False})
         t.daemon = True
         t.start()
+
+        logging.info("TwitterStreamer started successfully")
+
+        return t
 
 
 
@@ -96,14 +84,11 @@ class TwitterStreamer(StreamListener):
 
     def stop(self):
 
-        print "Stopping TwitterStreamer"
+        logging.info("Stopping TwitterStreamer")
 
-        # Close the mining-related threads
         self.stream.disconnect()
-        #self.velocity_thread.cancel()
-        #self.firebase.remove()
 
-        print "TwitterStreamer stopped"
+        logging.info("TwitterStreamer stopped")
 
         # End chat and wrap up
         #try:
@@ -112,10 +97,6 @@ class TwitterStreamer(StreamListener):
         #    self.respond("Receiver threw error on shutdown.")
 
         #self.respond("Shutting down...")
-
-        #for key in self.bucket.keys():
-        #    self.firebase.child("locations").child(key+",0").remove()
-
 
     #
     #   Data Management
@@ -126,29 +107,48 @@ class TwitterStreamer(StreamListener):
         coordinates = json['place']['bounding_box']['coordinates'][0]
         return coordinates
 
-    def verify_location(self, coords):
-        # This function may eventually become useful.
-        return True
-        # [[x1,y1],[x1,y2],[x2,y1],[x2,y2]]
-        west = coords[0][0] > self.location[0]
-        south = coords[0][1] > self.location[1]
-        east = coords[3][0] < self.location[2]
-        north = coords[3][1] < self.location[3]
-        return west and south and east and north
+    def record_event(self,long,lat):
 
-    def do_location_updates(self, key):
+        key = str(long) + "," + str(lat)
 
+        # If this is the first time recording for bucket, launch updater
+        if key not in self.buckets:
+            self.buckets[key] = self.buckets.get(key,0) + 1
+            self.deltas[key] = datetime.datetime.now()
+            self.post_bucket(key)
+        else:
+            self.buckets[key] += 1
+
+
+    def post_bucket(self, key):
+
+        #now = datetime.datetime.now()
+        #period = (now - self.deltas[key]).total_seconds()
+        #self.deltas[key] = now
         period = 10
-        velocity = float(self.bucket[key]) / float(period)
-        data = {'velocity':velocity}
+
+        velocity = float(self.buckets[key]) / float(period)
+
+        accel, torque = self.event_manager.record(velocity)
+
+        x, y = [int(i) for i in key.split(',')]
+
+        data = {
+                'x': x,
+                'y': y,
+                'width': 1,
+                'velocity':velocity,
+                'acceleration':accel,
+                'torque':torque
+            }
+
         self.node.post_results(data)
-        self.bucket[key] = 0
+        self.buckets[key] = 0
 
-        # Rerun again in 5 seconds
-        #t = threading.Timer(period, self.do_location_updates, args=(key, dbkey))
-        #t.daemon = True
-        #t.start()
-
+        # Rerun again later
+        t = threading.Timer(10, self.post_bucket, args=(key,))
+        t.daemon = True
+        t.start()
 
     #
     #   Event-driven functions
@@ -157,40 +157,37 @@ class TwitterStreamer(StreamListener):
     # Runs for every tweet
     def on_status(self, status):
 
-        print "Status received!"
+        logging.info("Status received!")
 
         json = status._json
         coords = self.find_location(json)
 
-        if(self.verify_location(coords)):
-            #print coords
+        # Random location within assigned region TODO improve this?
+        left    = max(self.location[0], coords[0][0])
+        bottom  = max(self.location[1], coords[0][1])
+        right   = min(self.location[2], coords[2][0])
+        top     = min(self.location[3], coords[2][1])
 
-            #print json['text']
+        #print "height range ", (coords[3][1] - coords[0][1])
+        #print bottom, "max", self.location[1], coords[0][1]
+        #print top, "min", self.location[3], coords[3][1]
 
-            # Random location within bounding box TODO improve this?
-            long = int(random.uniform(coords[0][0], coords[3][0]))
-            lat  = int(random.uniform(coords[0][1], coords[3][1]))
+        long = int(random.uniform(left, right))
+        lat  = int(random.uniform(bottom, top))
 
-            # Proper storage
-            key = str(long) + "," + str(lat)
-            if key not in self.bucket:
-                self.bucket[key] = self.bucket.get(key,0) + 1
-                self.do_location_updates(key) # TODO update this to a thread launch
-            else:
-                self.bucket[key] = self.bucket[key] + 1
+        #print lat
+
+        self.record_event(long,lat)
 
         return True
 
     def on_warning(self, warning):
-        print "WARNING: " + str(warning)
-        return False
+        logging.warning(str(warning))
+        return True
 
     # Catches errors
     def on_error(self, status):
-        #print "ERROR " + str(status)
-        self.log("ERROR " + str(status))
-        #if status == 420:
-        #    print("420 error.")
+        logging.critical("ERROR " + str(status))
         return False
 
     # Handles incoming control signals
@@ -229,9 +226,6 @@ class TwitterStreamer(StreamListener):
     def respond(self, message):
         #self.messages.push({'name':self.nick, 'text':message})
         pass
-
-    def log(self, message):
-        print self.nick + ":\t" + message
 
 if __name__ == '__main__':
 
