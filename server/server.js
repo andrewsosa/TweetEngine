@@ -8,7 +8,6 @@ var express     = require('express');        // call express
 var app         = express();                 // define our app using express
 var bodyParser  = require('body-parser');
 var firebase    = require('firebase');
-
 var hri         = require('human-readable-ids').hri;
 
 // configure app to use bodyParser()
@@ -23,22 +22,42 @@ var ref  = new Firebase("https://tweetengine.firebaseio.com/locations");
 // =============================================================================
 var router = express.Router();              // get an instance of the express Router
 
-// middleware to use for all requests
+// Middleware to use for all requests.
 router.use(function(req, res, next) {
-    // do logging
-    // console.log('Someone is connecting!');
-    next(); // make sure we go to the next routes and don't stop here
+    // Verify and log a connection.
+
+    // Move along, move along.
+    next();
 });
 
-// test route to make sure everything is working (accessed at GET http://localhost:8080/api)
+// Test route
 router.get('/', function(req, res) {
     res.json({message: 'This is where the TweetEngine lives.'});
 });
 
-// Used by new connecting nodes
+// For new nodes to register.
+router.route('/register')
+
+    .get(function(req, res) {
+
+        // Generate a human readable identifier for a node.
+        var nodeID = hri.random();
+
+        //var registeredNodes = ref.child("nodes");
+
+        // Send back the node's identifier.
+        res.json({
+            id: nodeID
+        });
+
+    });
+
+
+
+// Used by connecting nodes to get an assignment.
 router.route('/connect')
 
-    // register a connection
+    // init a connection
     .post(function(req, res) {
 
         // assign the new node a sector
@@ -48,7 +67,6 @@ router.route('/connect')
         // Let them know
         res.json({
             message: 'Connection successful.',
-            id: hri.random(),
             target: {
                 southwest: {
                     longitude: x,
@@ -96,7 +114,7 @@ router.route('/upload')
 
 // REGISTER OUR ROUTES -------------------------------
 // all of our routes will be prefixed with /api
-app.use('/api', router);
+app.use('/engine', router);
 
 // START THE SERVER
 // =============================================================================

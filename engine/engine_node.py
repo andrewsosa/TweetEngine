@@ -1,32 +1,11 @@
-# Special needs
-from twitter_streamer import TwitterStreamer
-
 # Standard libs
 import requests, json, time, datetime, logging, os, threading
 
-# Server URLS
-BASE_ADDR   = "http://localhost:8080/api"
-CONNECT     = BASE_ADDR + "/connect"
-POST        = BASE_ADDR + "/upload"
+# Custom classes
+from twitter_streamer import TwitterStreamer
 
-# Twitter API Credentials
-access_token = "472058940-Krvbmk4h58PPAwjqnhbgOwmBsIUVrJp3L1fGGq5o"
-access_token_secret = "wdPMhCxc8jj3uWkVwDAwlVTCYG6kvFJuWn2bqP08g1OCi"
-consumer_key = "DhqgE1tnvTH1KJDNPhkSkzDRZ"
-consumer_secret = "Frc9EA7PROJD366dGHj89JZPqqiqlwStK0yAqFoNnbxUsrdn9Y"
-
-twitter_creds = {
-    'access_token':access_token,
-    'access_token_secret':access_token_secret,
-    'consumer_key': consumer_key,
-    'consumer_secret':consumer_secret
-}
-
-# Logging Formats
-MESSAGE_FORMAT_FILE = '%(asctime)s %(levelname)-8s %(name)-12s %(message)s'
-MESSAGE_FORMAT_CONSOLE = '%(asctime)s %(levelname)-8s %(message)s'
-DATE_FORMAT = '%m/%d/%Y %I:%M:%S %p'
-FILE_FORMAT = '%Y-%m-%d-%I-%M-%S-%p'
+# Configuration
+from config import *
 
 
 class EngineNode():
@@ -42,7 +21,7 @@ class EngineNode():
         # Ackowledge connection? TODO handle failed connection
         logging.info(res.json()['message'])
 
-        self.id = res.json()['id']
+        self.id = NODE_ID
 
         # Extract target
         target = res.json()['target']

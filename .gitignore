@@ -1,3 +1,4 @@
 *.pyc
 engine/venv
 engine/logs
+tweets.txt

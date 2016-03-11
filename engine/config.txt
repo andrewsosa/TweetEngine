@@ -1,5 +1,0 @@
-# API CREDENTIALS
-access_token = "472058940-Krvbmk4h58PPAwjqnhbgOwmBsIUVrJp3L1fGGq5o"
-access_token_secret = "wdPMhCxc8jj3uWkVwDAwlVTCYG6kvFJuWn2bqP08g1OCi"
-consumer_key = "DhqgE1tnvTH1KJDNPhkSkzDRZ"
-consumer_secret = "Frc9EA7PROJD366dGHj89JZPqqiqlwStK0yAqFoNnbxUsrdn9Y"
