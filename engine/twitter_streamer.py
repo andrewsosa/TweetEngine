@@ -6,6 +6,8 @@ from tweepy.api import API
 
 # My libaries
 from event_manager import EventManager
+from config import *
+
 
 # Other libs
 import json, threading, datetime, random, logging
@@ -18,7 +20,7 @@ LAT  = 'latitude'
 
 class TwitterStreamer(StreamListener):
 
-    def __init__(self, credentials, node, southwest, northeast, extras):
+    def __init__(self, node, southwest, northeast, extras):
 
         logging.info("Beginning TwitterStreamer init")
 
@@ -29,7 +31,6 @@ class TwitterStreamer(StreamListener):
         self.buckets = {}
         self.deltas = {}
         self.location = [southwest[LONG],southwest[LAT],northeast[LONG],northeast[LAT]]
-        self.creds = credentials
         self.event_manager = EventManager()
 
         # Firebase & Control
@@ -56,8 +57,8 @@ class TwitterStreamer(StreamListener):
         logging.info("Starting TwitterStreamer")
 
         # This handles Twitter authetification and the connection to Twitter Streaming API
-        auth = OAuthHandler(self.creds['consumer_key'], self.creds['consumer_secret'])
-        auth.set_access_token(self.creds['access_token'], self.creds['access_token_secret'])
+        auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+        auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
 
         # 2nd parameter self serves as the StreamListener object
         self.stream = Stream(auth, self)

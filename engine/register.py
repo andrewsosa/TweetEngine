@@ -1,4 +1,4 @@
-import re, requests
+import re, requests, webbrowser
 
 from config import REGISTER
 
@@ -6,15 +6,8 @@ from config import REGISTER
 PATTERN = r"[a-z]+-[a-z]+-[0-9]{1,3}"
 regex = re.compile(PATTERN)
 
-if __name__ == "__main__":
-
-    # Grab out new ID from the server.
-    url = REGISTER
-    res = requests.get(url)
-    nodeID = res.json()['id']
-    print "Assigned identifier " + nodeID
-
-    # Let's try and write it to the file.
+# Write the nodeID to the config file
+def export_id(nodeID):
     try:
 
         f = open('config.py','r')
@@ -30,3 +23,12 @@ if __name__ == "__main__":
 
     except:
         print "Unable to automatically update config.py, please add ID manually."
+
+if __name__ == "__main__":
+
+    # Grab out new ID from the server.
+    try:
+        url = REGISTER
+        webbrowser.open(url, autoraise=True)
+    except:
+        print "No default web browser available."

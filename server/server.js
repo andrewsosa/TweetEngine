@@ -9,18 +9,62 @@ var app         = express();                 // define our app using express
 var bodyParser  = require('body-parser');
 var firebase    = require('firebase');
 var hri         = require('human-readable-ids').hri;
+var Flutter     = require('flutter');
+var session     = require('express-session');
+
 
 // configure app to use bodyParser()
 // this will let us get the data from a POST
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
+app.use(session({
+    secret: 'keyboard cat',
+    resave: false,
+    saveUninitialized: true})
+);
 
+var host = "http://localhost:8080/engine"
 var port = process.env.PORT || 8080;        // set our port
 var ref  = new Firebase("https://tweetengine.firebaseio.com/locations");
+var consumer_key = "***REMOVED***";
+var consumer_secret = "***REMOVED***";
+
+
+// Twitther OAuth Support
+// =============================================================================
+var flutter = new Flutter({
+    consumerKey: consumer_key,
+    consumerSecret: consumer_secret,
+    loginCallback: host + '/callback',
+    cache: false,
+    connectCallback: function(req, res) {
+        if (req.error) {
+          console.log(req.error);
+          return res.send('Oh no an error');
+        }
+    },
+    authCallback: function(req, res, next) {
+        if (req.error) {
+            console.log(req.error);
+            return res.send('Oh no an error');
+        }
+
+        // Store away oauth credentials here
+        var accessToken = req.session.oauthAccessToken;
+        var accessSecret = req.session.oauthAccessTokenSecret;
+        var nodeID = hri.random();
+
+        res.json({
+            token: accessToken,
+            secret: accessSecret,
+            nodeID: nodeID
+        });
+    }
+});
 
 // ROUTES FOR OUR API
 // =============================================================================
-var router = express.Router();              // get an instance of the express Router
+var router = express.Router();      // get an instance of the express Router
 
 // Middleware to use for all requests.
 router.use(function(req, res, next) {
@@ -35,24 +79,8 @@ router.get('/', function(req, res) {
     res.json({message: 'This is where the TweetEngine lives.'});
 });
 
-// For new nodes to register.
-router.route('/register')
-
-    .get(function(req, res) {
-
-        // Generate a human readable identifier for a node.
-        var nodeID = hri.random();
-
-        //var registeredNodes = ref.child("nodes");
-
-        // Send back the node's identifier.
-        res.json({
-            id: nodeID
-        });
-
-    });
-
-
+router.get('/register', flutter.connect);
+router.get('/callback', flutter.auth);
 
 // Used by connecting nodes to get an assignment.
 router.route('/connect')
@@ -60,11 +88,13 @@ router.route('/connect')
     // init a connection
     .post(function(req, res) {
 
-        // assign the new node a sector
+        // Validate they're cool
+
+        // Assign them a place
         x = -85;
         y = 30;
 
-        // Let them know
+        // Send back the location data
         res.json({
             message: 'Connection successful.',
             target: {
@@ -91,12 +121,18 @@ router.route('/upload')
 
         console.log("Receiving update!")
 
+        // Make sure the location matches their ID
+
+
+
         // extract location and velocity
         console.log(req.body.velocity);
         console.log(req.body.acceleration);
         console.log(req.body.torque);
 
-        var loc = ref.child(req.body.id);
+        var pos = "" + req.body.x + "," + req.body.y
+
+        var loc = ref.child(pos);
         loc.set({
             x: req.body.x,
             y: req.body.y,
