@@ -20,7 +20,7 @@ class EngineNode():
             res = requests.post(url, data = {'message':'Hello, world!'})
 
             # Ackowledge connection? TODO handle failed connection
-            logging.info(res.json()['message'])
+            logging.debug(res.json()['message'])
 
             self.id = NODE_ID
 
@@ -32,19 +32,19 @@ class EngineNode():
             # See what extra fields we want
             extras = res.json()['extras']
 
-            logging.info(str(southwest))
-            logging.info(str(northeast))
-            logging.info('EXTRAS: ' + str(extras))
+            logging.debug(str(southwest))
+            logging.debug(str(northeast))
+            logging.debug('EXTRAS: ' + str(extras))
 
             # Launch TwitterStreamer with said location
             self.twitter_streamer = TwitterStreamer(self,southwest, northeast, extras)
 
             # We're good to go
-            self.ready = True
+            self.running = True
 
         except:
             logging.info('Failed to launch, make sure the server address is correct.')
-            self.ready = False
+            self.running = False
 
     def start(self):
         self.stream_thread = self.twitter_streamer.start()
@@ -53,6 +53,7 @@ class EngineNode():
     def stop(self):
         self.twitter_streamer.stop()
         self.stream_thread.join()
+        self.running = False
 
     def init_logger(self):
 
@@ -89,32 +90,42 @@ class EngineNode():
         # Add extra data fields
         data['id'] = self.id
 
-        url = POST
-        requests.post(url, data = data)
-        logging.info("POST " + str(data))
+        try:
+            url = POST
+            requests.post(url, data = data)
+            logging.debug("POST " + str(data))
+        except:
+            logging.critical("Error uploading data, exiting...")
+            self.stop()
+            exit()
+
 
 if __name__ == "__main__":
+
+    # Get started
     en = EngineNode()
 
-    if not en.ready:
+    # Exit if we're not ready
+    if not en.running:
         exit()
 
+    # Try to start the streaming process
     try:
         stream_thread = en.start()
     except:
         en.stop()
         exit()
 
-
-    #
-    # stop the object
-    #
-
+    # (temp) Schedule auto shutdown
     logging.info("Scheduling auto-shutdown")
-
-    t = threading.Timer(15, en.stop)
+    t = threading.Timer(20, en.stop)
     t.daemon = True
     t.start()
-    t.join()
+    #t.join()
+
+    # Hold main thread while engine is running
+    while(en.running):
+        pass
+
 
     logging.info("All done!")

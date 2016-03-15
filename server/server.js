@@ -54,11 +54,20 @@ var flutter = new Flutter({
         var accessSecret = req.session.oauthAccessTokenSecret;
         var nodeID = hri.random();
 
-        res.json({
+        /*res.json({
             token: accessToken,
             secret: accessSecret,
             nodeID: nodeID
-        });
+        });*/
+
+
+        var msg =   "Please copy the following into the bottom of your config.py:" + "</br></br></br>" + 
+                    "ACCESS_TOKEN = " + accessToken + "</br>" +
+                    "ACCESS_TOKEN_SECRET = " + accessSecret + "</br>" +
+                    "NODE_ID = " + nodeID
+
+        res.send(msg)
+
     }
 });
 
@@ -123,17 +132,19 @@ router.post('/connect', function(req, res) {
 // Used by actively working nodes to upload coord data
 router.post('/upload', function(req, res){
 
-    console.log("Receiving update!")
 
     // Make sure the location matches their ID
 
 
     // extract location and velocity
-    console.log(req.body.velocity);
-    console.log(req.body.acceleration);
-    console.log(req.body.torque);
+    //console.log(req.body.velocity);
+    //console.log(req.body.acceleration);
+    //console.log(req.body.torque);
 
-    var pos = "" + req.body.x + "," + req.body.y
+    var pos = "" + req.body.x + "," + req.body.y;
+
+    var msg = "Receiving update on tile " + pos + " from node " + req.body.id;
+    console.log(msg);
 
     var loc = ref.child(pos);
     loc.set({
@@ -147,7 +158,7 @@ router.post('/upload', function(req, res){
 
     res.json({
         message: 'Upload received.'
-    })
+    });
 
 });
 

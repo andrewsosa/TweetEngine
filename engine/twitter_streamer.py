@@ -56,7 +56,7 @@ class TwitterStreamer(StreamListener):
         # 2nd parameter self serves as the StreamListener object
         self.stream = Stream(auth, self)
 
-        logging.info("Created Stream object")
+        logging.debug("Created Stream object")
 
         # Start streaming with right parameters
         #self.stream.filter(locations=self.location, async=True)
@@ -144,7 +144,7 @@ class TwitterStreamer(StreamListener):
     # Runs for every tweet
     def on_status(self, status):
 
-        logging.info("Status received!")
+        logging.debug("Status received!")
 
         json = status._json
         coords = self.find_location(json)
