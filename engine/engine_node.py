@@ -14,35 +14,45 @@ class EngineNode():
 
         self.init_logger()
 
-        # Acquire Target Location From Server
-        url = CONNECT
-        res = requests.post(url, data = {'message':'Hello, world!'})
+        try:
+            # Acquire Target Location From Server
+            url = CONNECT
+            res = requests.post(url, data = {'message':'Hello, world!'})
 
-        # Ackowledge connection? TODO handle failed connection
-        logging.info(res.json()['message'])
+            # Ackowledge connection? TODO handle failed connection
+            logging.info(res.json()['message'])
 
-        self.id = NODE_ID
+            self.id = NODE_ID
 
-        # Extract target
-        target = res.json()['target']
-        southwest = target['southwest']
-        northeast = target['northeast']
+            # Extract target
+            target = res.json()['target']
+            southwest = target['southwest']
+            northeast = target['northeast']
 
-        # See what extra fields we want
-        extras = res.json()['extras']
+            # See what extra fields we want
+            extras = res.json()['extras']
 
-        logging.info(str(southwest))
-        logging.info(str(northeast))
-        logging.info('EXTRAS: ' + str(extras))
+            logging.info(str(southwest))
+            logging.info(str(northeast))
+            logging.info('EXTRAS: ' + str(extras))
 
-        # Launch TwitterStreamer with said location
-        self.twitter_streamer = TwitterStreamer(self,southwest, northeast, extras)
+            # Launch TwitterStreamer with said location
+            self.twitter_streamer = TwitterStreamer(self,southwest, northeast, extras)
+
+            # We're good to go
+            self.ready = True
+
+        except:
+            logging.info('Failed to launch, make sure the server address is correct.')
+            self.ready = False
 
     def start(self):
-        return self.twitter_streamer.start()
+        self.stream_thread = self.twitter_streamer.start()
+        return self.stream_thread
 
     def stop(self):
         self.twitter_streamer.stop()
+        self.stream_thread.join()
 
     def init_logger(self):
 
@@ -86,11 +96,13 @@ class EngineNode():
 if __name__ == "__main__":
     en = EngineNode()
 
+    if not en.ready:
+        exit()
+
     try:
         stream_thread = en.start()
     except:
         en.stop()
-        stream_thread.join()
         exit()
 
 
@@ -100,11 +112,9 @@ if __name__ == "__main__":
 
     logging.info("Scheduling auto-shutdown")
 
-    t = threading.Timer(30, en.stop)
+    t = threading.Timer(15, en.stop)
     t.daemon = True
     t.start()
-
     t.join()
-    stream_thread.join()
 
     logging.info("All done!")
