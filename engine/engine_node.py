@@ -36,7 +36,7 @@ class EngineNode():
         logging.info('EXTRAS: ' + str(extras))
 
         # Launch TwitterStreamer with said location
-        self.twitter_streamer = TwitterStreamer(twitter_creds,self,southwest, northeast, extras)
+        self.twitter_streamer = TwitterStreamer(self,southwest, northeast, extras)
 
     def start(self):
         return self.twitter_streamer.start()

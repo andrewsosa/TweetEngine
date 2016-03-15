@@ -2,12 +2,13 @@
 #   Tweet Engine node configuration.
 #
 
+VERSION     = 1.0
+
 # Server URLS
 BASE_ADDR   = "http://localhost:8080/engine"   # Address of primary server.
 REGISTER    = BASE_ADDR + "/register"
 CONNECT     = BASE_ADDR + "/connect"
 POST        = BASE_ADDR + "/upload"
-
 
 # Logging Formats
 MESSAGE_FORMAT_FILE = '%(asctime)s %(levelname)-8s %(name)-12s %(message)s'
@@ -16,17 +17,10 @@ DATE_FORMAT = '%m/%d/%Y %I:%M:%S %p'
 FILE_FORMAT = '%Y-%m-%d-%I-%M-%S-%p'
 
 # Twitter API Credentials
-access_token = "472058940-Krvbmk4h58PPAwjqnhbgOwmBsIUVrJp3L1fGGq5o"
-access_token_secret = "wdPMhCxc8jj3uWkVwDAwlVTCYG6kvFJuWn2bqP08g1OCi"
-consumer_key = "DhqgE1tnvTH1KJDNPhkSkzDRZ"
-consumer_secret = "Frc9EA7PROJD366dGHj89JZPqqiqlwStK0yAqFoNnbxUsrdn9Y"
+CONSUMER_KEY = "DhqgE1tnvTH1KJDNPhkSkzDRZ"
+CONSUMER_SECRET = "Frc9EA7PROJD366dGHj89JZPqqiqlwStK0yAqFoNnbxUsrdn9Y"
 
-twitter_creds = {
-    'access_token':access_token,
-    'access_token_secret':access_token_secret,
-    'consumer_key': consumer_key,
-    'consumer_secret':consumer_secret
-}
-
-# Node ID
+# Edit below
+ACCESS_TOKEN = "472058940-Krvbmk4h58PPAwjqnhbgOwmBsIUVrJp3L1fGGq5o"
+ACCESS_TOKEN_SECRET = "wdPMhCxc8jj3uWkVwDAwlVTCYG6kvFJuWn2bqP08g1OCi"
 NODE_ID = "funny-parrot-94"
