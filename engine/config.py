@@ -9,6 +9,7 @@ BASE_ADDR   = "http://localhost:8080/engine"   # Address of primary server.
 REGISTER    = BASE_ADDR + "/register"
 CONNECT     = BASE_ADDR + "/connect"
 POST        = BASE_ADDR + "/upload"
+status      = BASE_ADDR + "/status"
 
 # Logging Formats
 MESSAGE_FORMAT_FILE = '%(asctime)s %(levelname)-8s %(name)-12s %(message)s'

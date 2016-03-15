@@ -79,74 +79,77 @@ router.get('/', function(req, res) {
     res.json({message: 'This is where the TweetEngine lives.'});
 });
 
+// Twitter Auth handlers
 router.get('/register', flutter.connect);
 router.get('/callback', flutter.auth);
 
+// Get update messages from the server
+router.get('/status', function(req, res) {
+    res.json({
+        message: "Server running.",
+        version: 1.0
+    })
+});
+
 // Used by connecting nodes to get an assignment.
-router.route('/connect')
+router.post('/connect', function(req, res) {
 
-    // init a connection
-    .post(function(req, res) {
+    // Validate they're cool
+    // TODO
 
-        // Validate they're cool
+    // Assign them a place
+    x = -85;
+    y = 30;
 
-        // Assign them a place
-        x = -85;
-        y = 30;
-
-        // Send back the location data
-        res.json({
-            message: 'Connection successful.',
-            target: {
-                southwest: {
-                    longitude: x,
-                    latitude: y
-                },
-                northeast: {
-                    longitude: x + 1,
-                    latitude: y + 1
-                }
+    // Send back the location data
+    res.json({
+        message: 'Connection successful.',
+        target: {
+            southwest: {
+                longitude: x,
+                latitude: y
             },
-            extras: ['python']
-        });
-
+            northeast: {
+                longitude: x + 1,
+                latitude: y + 1
+            }
+        },
+        extras: ['python']
     });
 
-
-// Used by actively working nodes
-router.route('/upload')
-
-    // upload new data about a point
-    .post(function(req, res){
-
-        console.log("Receiving update!")
-
-        // Make sure the location matches their ID
+});
 
 
+// Used by actively working nodes to upload coord data
+router.post('/upload', function(req, res){
 
-        // extract location and velocity
-        console.log(req.body.velocity);
-        console.log(req.body.acceleration);
-        console.log(req.body.torque);
+    console.log("Receiving update!")
 
-        var pos = "" + req.body.x + "," + req.body.y
+    // Make sure the location matches their ID
 
-        var loc = ref.child(pos);
-        loc.set({
-            x: req.body.x,
-            y: req.body.y,
-            width: req.body.width,
-            velocity: req.body.velocity,
-            acceleration: req.body.acceleration,
-            torque: req.body.torque
-        });
 
-        res.json({
-            message: 'Upload received.'
-        })
+    // extract location and velocity
+    console.log(req.body.velocity);
+    console.log(req.body.acceleration);
+    console.log(req.body.torque);
 
+    var pos = "" + req.body.x + "," + req.body.y
+
+    var loc = ref.child(pos);
+    loc.set({
+        x: req.body.x,
+        y: req.body.y,
+        width: req.body.width,
+        velocity: req.body.velocity,
+        acceleration: req.body.acceleration,
+        torque: req.body.torque
     });
+
+    res.json({
+        message: 'Upload received.'
+    })
+
+});
 
 // REGISTER OUR ROUTES -------------------------------
 // all of our routes will be prefixed with /api

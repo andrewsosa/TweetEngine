@@ -30,17 +30,10 @@ class TwitterStreamer(StreamListener):
         self.lock = threading.Lock()
         self.buckets = {}
         self.deltas = {}
+        self.uploaders = {}
         self.location = [southwest[LONG],southwest[LAT],northeast[LONG],northeast[LAT]]
         self.event_manager = EventManager()
 
-        # Firebase & Control
-        #self.firebase = Firebase(firebase_url)
-        #self.messages = self.firebase.child("messages")
-        #self.name = "Streamer"
-        #self.nick = self.name
-        #self.receiver = FirebaseListener(str(self.messages), self.on_command)
-        #self.receiver.start()
-        #self.respond(self.nick + " online!")
 
         # Upload handler
         self.node = node
@@ -76,28 +69,19 @@ class TwitterStreamer(StreamListener):
         return t
 
 
-
-    #def join(self):
-    #    # Wait for receiver to close
-    #    self.receiver.stop()
-    #    self.receiver.join()
-
-
     def stop(self):
 
         logging.info("Stopping TwitterStreamer")
 
+        # Disconnect the stream
         self.stream.disconnect()
+
+        # Cancel our uploading threads
+        for t in self.uploaders:
+            self.uploaders[t].cancel()
 
         logging.info("TwitterStreamer stopped")
 
-        # End chat and wrap up
-        #try:
-        #    self.receiver.stop()
-        #except:
-        #    self.respond("Receiver threw error on shutdown.")
-
-        #self.respond("Shutting down...")
 
     #
     #   Data Management
@@ -151,6 +135,8 @@ class TwitterStreamer(StreamListener):
         t.daemon = True
         t.start()
 
+        self.uploaders[key] = t
+
     #
     #   Event-driven functions
     #
@@ -168,10 +154,6 @@ class TwitterStreamer(StreamListener):
         bottom  = max(self.location[1], coords[0][1])
         right   = min(self.location[2], coords[2][0])
         top     = min(self.location[3], coords[2][1])
-
-        #print "height range ", (coords[3][1] - coords[0][1])
-        #print bottom, "max", self.location[1], coords[0][1]
-        #print top, "min", self.location[3], coords[3][1]
 
         long = int(random.uniform(left, right))
         lat  = int(random.uniform(bottom, top))
