@@ -1,5 +1,5 @@
 # Standard libs
-import requests, json, time, datetime, logging, os, threading
+import requests, json, time, datetime, logging, os, threading, sys
 
 # Custom classes
 from twitter_streamer import TwitterStreamer
@@ -14,10 +14,32 @@ class EngineNode():
 
         self.init_logger()
 
+
+        # Connection Phase
         try:
-            # Acquire Target Location From Server
+            # Check Target Location From Server
             url = CONNECT
-            res = requests.post(url, data = {'message':'Hello, world!'})
+            payload = {
+                'southwest':{'x':SOUTHWEST[0],'y':SOUTHWEST[1]},
+                'northeast':{'x':NORTHEAST[0],'y':NORTHEAST[1]},
+                'id':NODE_ID,
+                'token':ACCESS_TOKEN
+            }
+            data = json.dumps(payload)
+            headers = {'Content-Type': 'application/json'}
+            res = requests.post(url, data=data, headers=headers)
+
+        except:
+            logging.critical('Failed to launch, make sure the server address is correct.')
+            self.running = False
+            return
+
+        # Decoding Phase
+        try:
+            if res.json()['appr'] == False:
+                logging.critical(res.json()['message'])
+                self.running = False
+                return
 
             # Ackowledge connection? TODO handle failed connection
             logging.debug(res.json()['message'])
@@ -36,6 +58,13 @@ class EngineNode():
             logging.debug(str(northeast))
             logging.debug('EXTRAS: ' + str(extras))
 
+        except:
+            logging.critical('Unable to parse server response.')
+            self.running = False
+            return
+
+        # Launching Streamer Phase
+        try:
             # Launch TwitterStreamer with said location
             self.twitter_streamer = TwitterStreamer(self,southwest, northeast, extras)
 
@@ -43,8 +72,10 @@ class EngineNode():
             self.running = True
 
         except:
-            logging.info('Failed to launch, make sure the server address is correct.')
+            logging.critical('Failed to launch TwitterStreamer')
             self.running = False
+            print "Unexpected error:", sys.exc_info()[0]
+
 
     def start(self):
         self.stream_thread = self.twitter_streamer.start()
@@ -88,7 +119,8 @@ class EngineNode():
     def post_results(self,data):
 
         # Add extra data fields
-        data['id'] = self.id
+        data['id'] = NODE_ID
+        data['token'] = ACCESS_TOKEN
 
         try:
             url = POST
@@ -118,7 +150,7 @@ if __name__ == "__main__":
 
     # (temp) Schedule auto shutdown
     logging.info("Scheduling auto-shutdown")
-    t = threading.Timer(20, en.stop)
+    t = threading.Timer(30, en.stop)
     t.daemon = True
     t.start()
     #t.join()

@@ -1,4 +1,5 @@
 *.pyc
 engine/venv
 engine/logs
+server/persist
 tweets.txt

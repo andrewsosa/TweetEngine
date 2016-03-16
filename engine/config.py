@@ -21,7 +21,11 @@ FILE_FORMAT = '%Y-%m-%d-%I-%M-%S-%p'
 CONSUMER_KEY = "DhqgE1tnvTH1KJDNPhkSkzDRZ"
 CONSUMER_SECRET = "Frc9EA7PROJD366dGHj89JZPqqiqlwStK0yAqFoNnbxUsrdn9Y"
 
-# Edit below
+# Requested Boundaries
+SOUTHWEST = (-85,30)
+NORTHEAST = (-84,31)
+
+# From central server, edit below
 ACCESS_TOKEN = "472058940-Krvbmk4h58PPAwjqnhbgOwmBsIUVrJp3L1fGGq5o"
 ACCESS_TOKEN_SECRET = "wdPMhCxc8jj3uWkVwDAwlVTCYG6kvFJuWn2bqP08g1OCi"
-NODE_ID = "funny-parrot-94"
+NODE_ID = "chilly-rat-80"

@@ -118,6 +118,9 @@ class TwitterStreamer(StreamListener):
 
         x, y = [int(i) for i in key.split(',')]
 
+        x = int(x)
+        y = int(y)
+
         data = {
                 'x': x,
                 'y': y,

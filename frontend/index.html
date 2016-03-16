@@ -11,9 +11,13 @@
     <!-- Javascript Libaries -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <script src="bootstrap-3.3.5-dist/js/bootstrap.min.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js"></script>
+    <!--<script src="https://maps.googleapis.com/maps/api/js"></script> -->
     <script src="https://cdn.firebase.com/js/client/2.3.1/firebase.js"></script>
+    <script async defer
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBr9t5TW0wI58EeXfrsK7YoBXqrSX891LM&callback=init"
+            type="text/javascript"></script>
     <script src="js/app.js"></script>
+
 
     <!-- Custom styles -->
     <link rel="stylesheet" href="css/material-design-color-palette.min.css">
@@ -31,8 +35,9 @@
       <!-- Collect the nav links, forms, and other content for toggling -->
       <div class="collapse navbar-collapse pull-right">
         <ul class="nav navbar-nav">
-          <li><a href="#" class="mdc-text-grey-600">Blog</a></li>
-          <li><a href="#" class="mdc-text-grey-600">Github</a></li>
+          <li class="modetoggle" id="velocity"><a class="mdc-text-grey-600">Velocity</a></li>
+          <li class="modetoggle" id="acceleration"><a class="mdc-text-grey-600">Acceleration</a></li>
+          <li class="modetoggle" id="torque"><a class="mdc-text-grey-600">Torque</a></li>
         </ul>
       </div><!-- /.navbar-collapse -->
 

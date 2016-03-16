@@ -11,26 +11,31 @@ var firebase    = require('firebase');
 var hri         = require('human-readable-ids').hri;
 var Flutter     = require('flutter');
 var session     = require('express-session');
-
+var register    = require('node-persist');
 
 // configure app to use bodyParser()
 // this will let us get the data from a POST
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 app.use(session({
-    secret: 'keyboard cat',
+    secret: 'johncena',
     resave: false,
     saveUninitialized: true})
 );
 
-var host = "http://localhost:8080/engine"
+// Init the register of user/node storage
+register.initSync();
+
+var host = "http://localhost:8080/engine";
 var port = process.env.PORT || 8080;        // set our port
 var ref  = new Firebase("https://tweetengine.firebaseio.com/locations");
 var consumer_key = "DhqgE1tnvTH1KJDNPhkSkzDRZ";
 var consumer_secret = "Frc9EA7PROJD366dGHj89JZPqqiqlwStK0yAqFoNnbxUsrdn9Y";
 
+var cells = {};
 
-// Twitther OAuth Support
+
+// Twitter OAuth Support
 // =============================================================================
 var flutter = new Flutter({
     consumerKey: consumer_key,
@@ -54,22 +59,68 @@ var flutter = new Flutter({
         var accessSecret = req.session.oauthAccessTokenSecret;
         var nodeID = hri.random();
 
-        /*res.json({
-            token: accessToken,
-            secret: accessSecret,
-            nodeID: nodeID
-        });*/
+        // Record user
+        register.setItem(nodeID, accessToken);
 
-
-        var msg =   "Please copy the following into the bottom of your config.py:" + "</br></br></br>" + 
-                    "ACCESS_TOKEN = " + accessToken + "</br>" +
-                    "ACCESS_TOKEN_SECRET = " + accessSecret + "</br>" +
-                    "NODE_ID = " + nodeID
+        var msg =   "Please copy the following into the bottom of your config.py:" + "</br></br></br>" +
+                    "ACCESS_TOKEN = \"" + accessToken + "\"</br>" +
+                    "ACCESS_TOKEN_SECRET = \"" + accessSecret + "\"</br>" +
+                    "NODE_ID = \"" + nodeID + "\""
 
         res.send(msg)
 
     }
 });
+
+// Cell tracking
+// =============================================================================
+
+function validateNode(id, token) {
+    return (token == register.getItem(id));
+}
+
+function initCoords() {
+    for (i = -180; i <= 180 ; i++) {
+        for (j = -90; j <= 90; j++ ) {
+            cells[''+i+','+j] = null;
+        }
+    }
+}
+initCoords();
+
+function approveCoords(southwest, northeast, id) {
+
+    // check if we're cool first
+    for (i = southwest.x; i <= northeast.x; i++) {
+        for (j = southwest.y; j <= northeast.y; j++) {
+            if (cells[''+i+','+j] != null) {
+                return false;
+            }
+        }
+    }
+
+    // alloc the requested areas
+    for (i = southwest.x; i <= northeast.x; i++) {
+        for (j = southwest.y; j <= northeast.y; j++) {
+            cells[''+i+','+j] = id;
+        }
+    }
+
+    return true;
+
+}
+
+function disconnectCoords(southwest, northeast, id) {
+    // dealloc the requested areas
+    for (i = southwest.x; i <= northeast.x; i++) {
+        for (j = southwest.y; j <= northeast.y; j++) {
+            if (cells[''+i+','+j] == id) {
+                cells[''+i+','+j] = null;
+            }
+        }
+    }
+}
+
 
 // ROUTES FOR OUR API
 // =============================================================================
@@ -93,38 +144,73 @@ router.get('/register', flutter.connect);
 router.get('/callback', flutter.auth);
 
 // Get update messages from the server
-router.get('/status', function(req, res) {
+router.post('/status', function(req, res) {
+
+    // Validate they're cool
+    if(!validateNode(req.body.id, req.body.token)) {
+        console.log("Denying connection");
+        res.json({message:'You are not registered.', version: 1.0});
+        return;
+    }
+
     res.json({
         message: "Server running.",
         version: 1.0
-    })
+    });
 });
 
 // Used by connecting nodes to get an assignment.
 router.post('/connect', function(req, res) {
 
     // Validate they're cool
-    // TODO
+    if(!validateNode(req.body.id, req.body.token)) {
+        console.log("Denying connection");
+        res.json({message:'Request denied.'});
+        return;
+    }
 
-    // Assign them a place
-    x = -85;
-    y = 30;
+    // Approve their location request
+    var approved = approveCoords(req.body.southwest, req.body.northeast, req.body.id);
 
-    // Send back the location data
+    if(approved) {
+        // Send back the extras data
+        res.json({
+            appr: true,
+            message: "Connection approved.",
+            extras: ['python'],
+            target: {
+                southwest: {
+                   longitude: req.body.southwest.x,
+                   latitude: req.body.southwest.y
+                },
+                northeast: {
+                   longitude: req.body.northeast.x,
+                   latitude: req.body.northeast.y
+                }
+       }
+        });
+    } else {
+        res.json({
+            appr: false,
+            message: "Coordinates overlap. Please consult map to find open area."
+        });
+    }
+});
+
+router.post('/disconnect', function(req, res){
+
+    // Validate they're cool
+    if(!validateNode(req.body.id, req.body.token)) {
+        console.log("Denying connection");
+        res.json({message:'Request denied.'});
+        return;
+    }
+
+    disconnectCoords(req.body.southwest, req.body.northeast, req.body.id);
+
     res.json({
-        message: 'Connection successful.',
-        target: {
-            southwest: {
-                longitude: x,
-                latitude: y
-            },
-            northeast: {
-                longitude: x + 1,
-                latitude: y + 1
-            }
-        },
-        extras: ['python']
-    });
+        message: "Disconnected coordinates."
+    })
 
 });
 
@@ -132,14 +218,16 @@ router.post('/connect', function(req, res) {
 // Used by actively working nodes to upload coord data
 router.post('/upload', function(req, res){
 
+    // Validate they're cool
+    if(!validateNode(req.body.id, req.body.token)) {
+        res.json({message:'Request denied.'});
+        res.json({message:'Request denied.'});
+        return;
+    }
 
     // Make sure the location matches their ID
 
 
-    // extract location and velocity
-    //console.log(req.body.velocity);
-    //console.log(req.body.acceleration);
-    //console.log(req.body.torque);
 
     var pos = "" + req.body.x + "," + req.body.y;
 
@@ -148,12 +236,12 @@ router.post('/upload', function(req, res){
 
     var loc = ref.child(pos);
     loc.set({
-        x: req.body.x,
-        y: req.body.y,
-        width: req.body.width,
-        velocity: req.body.velocity,
-        acceleration: req.body.acceleration,
-        torque: req.body.torque
+        x: parseFloat(req.body.x),
+        y: parseFloat(req.body.y),
+        width: parseFloat(req.body.width),
+        velocity: parseFloat(req.body.velocity),
+        acceleration: parseFloat(req.body.acceleration),
+        torque: parseFloat(req.body.torque)
     });
 
     res.json({
@@ -163,7 +251,7 @@ router.post('/upload', function(req, res){
 });
 
 // REGISTER OUR ROUTES -------------------------------
-// all of our routes will be prefixed with /api
+// all of our routes will be prefixed with /engine
 app.use('/engine', router);
 
 // START THE SERVER
