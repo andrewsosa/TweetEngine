@@ -21,7 +21,11 @@ FILE_FORMAT = '%Y-%m-%d-%I-%M-%S-%p'
 CONSUMER_KEY = "***REMOVED***"
 CONSUMER_SECRET = "***REMOVED***"
 
-# Edit below
+# Requested Boundaries
+SOUTHWEST = (-85,30)
+NORTHEAST = (-84,31)
+
+# From central server, edit below
 ACCESS_TOKEN = "***REMOVED***"
 ACCESS_TOKEN_SECRET = "***REMOVED***"
-NODE_ID = "funny-parrot-94"
+NODE_ID = "chilly-rat-80"

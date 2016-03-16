@@ -6,7 +6,12 @@ var mapBounds  = {
   south: 25,
   east: -79,
   west: -88
-};;
+};
+
+var mode = "velocity"
+
+
+
 
 // Florida boundaries
 /*mapBounds = {
@@ -29,8 +34,8 @@ var locations = firebase.child("locations");
 function makeSquare(bounds, map, color) {
   return new google.maps.Rectangle({
     strokeColor: color,
-    strokeOpacity: 0.00,
-    strokeWeight: 0,
+    strokeOpacity: 0.15,
+    strokeWeight: 2,
     fillColor: color,
     fillOpacity: 0.05,
     map: map,
@@ -68,6 +73,8 @@ function drawCell(x, y, width) {
     east: x + width,
     west: x
   };
+
+  console.log(cellBounds)
 
   return makeSquare(cellBounds, map, shades[5]);
 
@@ -111,7 +118,7 @@ locations.on("child_changed", function(snapshot) {
     cells[cellName] = drawCell(cellVal.x, cellVal.y, cellVal.width);
     cell = cells[cellName];
   }
-  shadeCell(cell, calculateOpacity(cellVal.velocity));
+  shadeCell(cell, calculateOpacity(cellVal[mode]));
 });
 
 // Listen for nodes shutting down
@@ -120,5 +127,28 @@ locations.on("child_removed", function(snapshot){
   delete cells[cellName];
 });
 
+
+function triggerRefresh(mode) {
+    locations.once("value", function(snapshot) {
+        snapshot.forEach(function(childSnapshot) {
+            var key = childSnapshot.key();
+            //var data = childSnapshot.val();
+            locations.child(key).update({
+                "refresh":mode
+            })
+        })
+    })
+}
+
 // Set the listen to init everything on load
-google.maps.event.addDomListener(window, 'load', init);
+//google.maps.event.addDomListener(window, 'load', init);
+$(window).load(function(){
+     $(function(){
+         $('li').on("click", function(){
+             //console.log("hello!")
+             //mode = $(this.id)
+             mode = $(this).attr('id')
+             triggerRefresh(mode)
+         });
+     })
+});

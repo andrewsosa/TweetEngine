@@ -8,7 +8,8 @@
     "firebase": "^2.4.1",
     "flutter": "0.0.5",
     "human-readable-ids": "^1.0.1",
-    "mongoose": "~3.8.0"
+    "mongoose": "~3.8.0",
+    "node-persist": "0.0.8"
   },
   "scripts": {
     "start": "node server.js"
