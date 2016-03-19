@@ -31,14 +31,14 @@ class EngineNode():
 
         except:
             logging.critical('Failed to launch, make sure the server address is correct.')
-            self.running = False
+            self.ready = False
             return
 
         # Decoding Phase
         try:
             if res.json()['appr'] == False:
                 logging.critical(res.json()['message'])
-                self.running = False
+                self.ready = False
                 return
 
             # Ackowledge connection? TODO handle failed connection
@@ -60,7 +60,7 @@ class EngineNode():
 
         except:
             logging.critical('Unable to parse server response.')
-            self.running = False
+            self.ready = False
             return
 
         # Launching Streamer Phase
@@ -69,17 +69,27 @@ class EngineNode():
             self.twitter_streamer = TwitterStreamer(self,southwest, northeast, extras)
 
             # We're good to go
-            self.running = True
+            self.ready = True
 
         except:
             logging.critical('Failed to launch TwitterStreamer')
-            self.running = False
+            self.ready = False
             print "Unexpected error:", sys.exc_info()[0]
 
 
     def start(self):
-        self.stream_thread = self.twitter_streamer.start()
-        return self.stream_thread
+        if not self.ready:
+            logging.warning("Tried to start node when not ready.")
+            return
+
+        try:
+            self.stream_thread = self.twitter_streamer.start()
+            self.running = True
+            return self.stream_thread
+        except:
+            self.running = False
+            logging.critical("Failed to start engine node")
+            return
 
     def stop(self):
         self.twitter_streamer.stop()
@@ -138,14 +148,13 @@ if __name__ == "__main__":
     en = EngineNode()
 
     # Exit if we're not ready
-    if not en.running:
+    if not en.ready:
         exit()
 
     # Try to start the streaming process
-    try:
-        stream_thread = en.start()
-    except:
-        en.stop()
+    stream_thread = en.start()
+
+    if not en.running:
         exit()
 
     # (temp) Schedule auto shutdown
@@ -157,7 +166,7 @@ if __name__ == "__main__":
 
     # Hold main thread while engine is running
     while(en.running):
-        pass
+        pass # TODO add better logic here
 
 
     logging.info("All done!")
