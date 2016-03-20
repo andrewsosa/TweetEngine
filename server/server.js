@@ -8,6 +8,7 @@ var express     = require('express');        // call express
 var app         = express();                 // define our app using express
 var bodyParser  = require('body-parser');
 var firebase    = require('firebase');
+var tokengen    = require('firebase-token-generator')
 var hri         = require('human-readable-ids').hri;
 var Flutter     = require('flutter');
 var session     = require('express-session');
@@ -28,11 +29,26 @@ register.initSync();
 
 var host = "http://localhost:8080/engine";
 var port = process.env.PORT || 8080;        // set our port
-var ref  = new Firebase("https://tweetengine.firebaseio.com/locations");
 var consumer_key = "***REMOVED***";
 var consumer_secret = "***REMOVED***";
-
 var cells = {};
+
+// Firebase Auth and Connection
+// =============================================================================
+var tokenGenerator = new tokengen("***REMOVED***");
+var token = tokenGenerator.createToken(
+    {uid: "forkingqueue", boss: "andrewthewizard"},
+    {admin:true}
+);
+
+var ref  = new Firebase("https://tweetengine.firebaseio.com/locations");
+ref.authWithCustomToken(token, function(error, authData) {
+    if (error) {
+      console.log("Login Failed!", error);
+    } else {
+      console.log("Login Succeeded!", authData);
+    }
+});
 
 
 // Twitter OAuth Support
