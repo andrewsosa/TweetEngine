@@ -46,7 +46,7 @@ ref.authWithCustomToken(token, function(error, authData) {
     if (error) {
       console.log("Login Failed!", error);
     } else {
-      console.log("Login Succeeded!", authData);
+      console.log("Login Succeeded!");
     }
 });
 
