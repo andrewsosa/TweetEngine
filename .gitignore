@@ -3,8 +3,5 @@ engine/venv
 engine/logs
 server/persist
 tweets.txt
-<<<<<<< HEAD
 secrets.txt
 analysis/
-=======
->>>>>>> 5291e8c006fcb263c38bf176a03a86b5215f2e38
