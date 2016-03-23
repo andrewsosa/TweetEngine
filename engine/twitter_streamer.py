@@ -4,10 +4,9 @@ from tweepy import OAuthHandler
 from tweepy import Stream
 from tweepy.api import API
 
-# My libaries
+# Custom libaries
 from event_manager import EventManager
 from config import *
-
 
 # Other libs
 import json, threading, datetime, random, logging
