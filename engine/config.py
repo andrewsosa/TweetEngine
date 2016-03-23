@@ -1,3 +1,5 @@
+import os
+
 #
 #   Tweet Engine node configuration.
 #
@@ -18,14 +20,14 @@ DATE_FORMAT = '%m/%d/%Y %I:%M:%S %p'
 FILE_FORMAT = '%Y-%m-%d-%I-%M-%S-%p'
 
 # Twitter API Credentials
-CONSUMER_KEY = "***REMOVED***"
-CONSUMER_SECRET = "***REMOVED***"
+CONSUMER_KEY = os.environ['TWEET_ENGINE_CONSUMER_KEY']
+CONSUMER_SECRET = os.environ['TWEET_ENGINE_CONSUMER_SECRET']
 
 # Requested Boundaries
 SOUTHWEST = (-85,30)
 NORTHEAST = (-81,34)
 
 # From central server, edit below
-ACCESS_TOKEN = "***REMOVED***"
-ACCESS_TOKEN_SECRET = "***REMOVED***"
+ACCESS_TOKEN = os.environ['TWEET_ENGINE_ACCESS_TOKEN']
+ACCESS_TOKEN_SECRET = os.environ['TWEET_ENGINE_ACCESS_TOKEN_SECRET']
 NODE_ID = "chilly-rat-80"
