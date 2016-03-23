@@ -20,14 +20,14 @@ DATE_FORMAT = '%m/%d/%Y %I:%M:%S %p'
 FILE_FORMAT = '%Y-%m-%d-%I-%M-%S-%p'
 
 # Twitter API Credentials
-CONSUMER_KEY = os.environ['TWEET_ENGINE_CONSUMER_KEY']
-CONSUMER_SECRET = os.environ['TWEET_ENGINE_CONSUMER_SECRET']
+CONSUMER_KEY = os.environ['TWEET_ENGINE_CONSUMER_KEY']          # Only for
+CONSUMER_SECRET = os.environ['TWEET_ENGINE_CONSUMER_SECRET']    # private server
 
 # Requested Boundaries
 SOUTHWEST = (-85,30)
 NORTHEAST = (-81,34)
 
 # From central server, edit below
-ACCESS_TOKEN = os.environ['TWEET_ENGINE_ACCESS_TOKEN']
-ACCESS_TOKEN_SECRET = os.environ['TWEET_ENGINE_ACCESS_TOKEN_SECRET']
-NODE_ID = "chilly-rat-80"
+ACCESS_TOKEN = "<access_token>"
+ACCESS_TOKEN_SECRET = "<access_token_secret>"
+NODE_ID = "<node_id>"

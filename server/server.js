@@ -23,12 +23,12 @@ var cells = {};
 
 // Check for enviromental vars
 // =============================================================================
-var consumer_key = process.env.TWEET_ENGINE_CONSUMER_KEY;
-var consumer_secret = process.env.TWEET_ENGINE_CONSUMER_SECRET;
-var firebase_secret = process.env.TWEET_ENGINE_FIREBASE_SECRET;
-var session_sercet = process.env.TWEET_ENGINE_SESSION_SECRET;
+var consumer_key = "<consumer_key>";
+var consumer_secret = "<consumer_secret>";
+var firebase_secret = "<firebase_secret>";
+var session_sercet = "<session_secret>";
 
-if(consumer_key == null) {
+/*if(consumer_key == null) {
     console.log("Missing required enviromental variable TWEET_ENGINE_CONSUMER_KEY");
     exit(1);
 } else if (consumer_secret == null) {
@@ -40,7 +40,7 @@ if(consumer_key == null) {
 } else if (session_sercet == null) {
     console.log("Missing required enviromental variable TWEET_ENGINE_SESSION_SECRET");
     exit(1);
-}
+} */
 
 
 // configure app to use bodyParser()
