@@ -14,28 +14,50 @@ var Flutter     = require('flutter');
 var session     = require('express-session');
 var register    = require('node-persist');
 
-// configure app to use bodyParser()
-// this will let us get the data from a POST
-app.use(bodyParser.urlencoded({extended: true}));
-app.use(bodyParser.json());
-app.use(session({
-    secret: 'johncena',
-    resave: false,
-    saveUninitialized: true})
-);
-
 // Init the register of user/node storage
 register.initSync();
 
 var host = "http://localhost:8080/engine";
 var port = process.env.PORT || 8080;        // set our port
-var consumer_key = "DhqgE1tnvTH1KJDNPhkSkzDRZ";
-var consumer_secret = "Frc9EA7PROJD366dGHj89JZPqqiqlwStK0yAqFoNnbxUsrdn9Y";
 var cells = {};
+
+// Check for enviromental vars
+// =============================================================================
+var consumer_key = process.env.TWEET_ENGINE_CONSUMER_KEY;
+var consumer_secret = process.env.TWEET_ENGINE_CONSUMER_SECRET;
+var firebase_secret = process.env.TWEET_ENGINE_FIREBASE_SECRET;
+var session_sercet = process.env.TWEET_ENGINE_SESSION_SECRET;
+
+if(consumer_key == null) {
+    console.log("Missing required enviromental variable TWEET_ENGINE_CONSUMER_KEY");
+    exit(1);
+} else if (consumer_secret == null) {
+    console.log("Missing required enviromental variable TWEET_ENGINE_CONSUMER_SECRET");
+    exit(1);
+} else if (firebase_secret == null) {
+    console.log("Missing required enviromental variable TWEET_ENGINE_FIREBASE_SECRET");
+    exit(1);
+} else if (session_sercet == null) {
+    console.log("Missing required enviromental variable TWEET_ENGINE_SESSION_SECRET");
+    exit(1);
+}
+
+
+// configure app to use bodyParser()
+// this will let us get the data from a POST
+// =============================================================================
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.json());
+app.use(session({
+    secret: session_sercet,
+    resave: false,
+    saveUninitialized: true})
+);
+
 
 // Firebase Auth and Connection
 // =============================================================================
-var tokenGenerator = new tokengen("NTHuNFX7Bzrd5APTQYorWQ1W8BxNGO0CNWLbbloV");
+var tokenGenerator = new tokengen(firebase_secret);
 var token = tokenGenerator.createToken(
     {uid: "forkingqueue", boss: "andrewthewizard"},
     {admin:true}
@@ -274,83 +296,3 @@ app.use('/engine', router);
 // =============================================================================
 app.listen(port);
 console.log('Magic happens on port ' + port);
-
-
-/*
-// more routes for our API will happen here
-// on routes that end in /feed
-// ----------------------------------------------------
-router.route('/feed')
-
-    // create a feed (accessed at POST http://localhost:8080/api/feed)
-    .post(function(req, res) {
-
-        var feed = new Feed();      // create a new instance of the Feed model
-        feed.message = req.body.message;  // set the feed name (comes from the request)
-        feed.authorID = req.body.authorID;
-        // save the feed and check for errors
-        feed.save(function(err) {
-            if (err)
-                res.send(err);
-
-            res.json({ message: 'Feed post created!' });
-        });
-    })
-
-    // get all the feed objs (accessed at GET http://localhost:8080/api/feed)
-    .get(function(req, res) {
-        Feed.find(function(err, feed) {
-            if (err)
-                res.send(err);
-
-            res.json(feed);
-        });
-
-    });
-
-// on routes that end in /feed/:feed_id
-// ----------------------------------------------------
-router.route('/feed/:feed_id')
-
-    // get the feed with that id (accessed at GET http://localhost:8080/api/feeds/:feed_id)
-    .get(function(req, res) {
-        Feed.findById(req.params.feed_id, function(err, feed) {
-            if (err)
-                res.send(err);
-            res.json(feed);
-        })
-
-    // update the feed obj with this id (accessed at PUT http://localhost:8080/api/feed/:feed_id)
-    .put(function(req, res) {
-
-        // use our feed model to find the feed we want
-        Feed.findById(req.params.feed, function(err, feed) {
-
-            if (err)
-                res.send(err);
-
-            feed.message = req.body.message;  // update the feeds info
-            feed.authorID = req.body.authorID;
-
-            // save the feed
-            feed.save(function(err) {
-                if (err)
-                    res.send(err);
-                res.json({ message: 'Feed updated!' });
-            });
-
-        });
-    })
-
-    // delete the feed with this id (accessed at DELETE http://localhost:8080/api/feed/:feed_id)
-    .delete(function(req, res) {
-        Feed.remove({
-            _id: req.params.feed_id
-        }, function(err, feed) {
-            if (err)
-                res.send(err);
-            res.json({ message: 'Successfully deleted' });
-        });
-    });
-
-}); */
